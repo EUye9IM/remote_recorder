@@ -4,5 +4,5 @@ debug: yes
 # http(s) 服务
 app:
   # 资源文件位置
-  resource: ..
+  resource: ../client
 ...
