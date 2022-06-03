@@ -39,9 +39,11 @@ func init() {
 }
 
 func apiRoute(r *gin.RouterGroup) {
-	r.GET("/ping/", func(c *gin.Context) {
+	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
 	})
+	r.GET("/ws", WebsocketServer)
+
 }
 
 func RunHttp() {

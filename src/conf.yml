@@ -1,6 +1,6 @@
 ---
 # 调试模式 yes/no
-debug: yes
+debug: no
 
 # http(s) 服务
 app:
@@ -18,8 +18,10 @@ app:
     key: sign/key.pem
 
 # webrtc 服务
-webrtc:
+# webrtc:
+  # websocket 端口号
+  # websocket_port: 65472
   # 候选 ICE 列表
-  ice_list:
-    - stun:stun.l.google.com:19302
+  # ice_list:
+  #   - stun:stun.l.google.com:19302
 ...
