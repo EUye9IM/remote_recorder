@@ -12,8 +12,9 @@ var Cfg struct {
 	App   struct {
 		Https     bool
 		Port      int
+		Log       string
 		Resource  string
-		Sign_path struct {
+		Signature struct {
 			Crt string
 			Key string
 		}
@@ -29,8 +30,8 @@ func init() {
 	flag.Parse()
 
 	if conf_file, err := ioutil.ReadFile(config_path); err != nil {
-		panic(err.Error())
+		panic("Cannot open file: " + config_path + ".\n" + err.Error())
 	} else if err := yaml.Unmarshal(conf_file, &Cfg); err != nil {
-		panic(err.Error())
+		panic("File: " + config_path + " error.\n" + err.Error())
 	}
 }

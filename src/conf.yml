@@ -8,12 +8,14 @@ app:
   https: yes
   # 端口 http:80 https:443
   port: 443
+  # 日志输出 debug 模式下无效
+  log: server.log
   # 资源文件位置
-  resource: ../client
-  # 证书文件位置 https 模式下必须指定
-  sign_path:
-    crt: sign/server.crt
-    key: sign/server.key
+  resource: static
+  # 证书文件位置 http 模式下无效
+  signature:
+    crt: sign/cert.pem
+    key: sign/key.pem
 
 # webrtc 服务
 webrtc:
