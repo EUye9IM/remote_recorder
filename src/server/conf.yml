@@ -1,8 +1,10 @@
 ---
-# 调试模式
+# 调试模式 yes/no
 debug: yes
 # http(s) 服务
 app:
   # 资源文件位置
-  resource: ..
+  resource: ../client
+  # 端口
+  port: 80
 ...

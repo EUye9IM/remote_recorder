@@ -11,6 +11,7 @@ var Cfg struct {
 	Debug bool
 	App   struct {
 		Resource string
+		Port     int
 	}
 }
 

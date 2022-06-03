@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,5 +23,5 @@ func init() {
 }
 
 func RunHttp() {
-	engin.Run()
+	engin.Run(":" + strconv.Itoa(Cfg.App.Port))
 }
