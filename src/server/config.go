@@ -10,8 +10,16 @@ import (
 var Cfg struct {
 	Debug bool
 	App   struct {
-		Resource string
-		Port     int
+		Https     bool
+		Port      int
+		Resource  string
+		Sign_path struct {
+			Crt string
+			Key string
+		}
+	}
+	Webrtc struct {
+		Ice_list []string
 	}
 }
 
@@ -20,13 +28,9 @@ func init() {
 	flag.StringVar(&config_path, "c", "conf.yml", "set path to configuration file")
 	flag.Parse()
 
-	conf_file, err := ioutil.ReadFile(config_path)
-	if err != nil {
+	if conf_file, err := ioutil.ReadFile(config_path); err != nil {
 		panic(err.Error())
-	}
-
-	err = yaml.Unmarshal(conf_file, &Cfg)
-	if err != nil {
+	} else if err := yaml.Unmarshal(conf_file, &Cfg); err != nil {
 		panic(err.Error())
 	}
 }

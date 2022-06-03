@@ -23,5 +23,9 @@ func init() {
 }
 
 func RunHttp() {
-	engin.Run(":" + strconv.Itoa(Cfg.App.Port))
+	if Cfg.App.Https {
+		engin.RunTLS(":"+strconv.Itoa(Cfg.App.Port), Cfg.App.Sign_path.Crt, Cfg.App.Sign_path.Key)
+	} else {
+		engin.Run(":" + strconv.Itoa(Cfg.App.Port))
+	}
 }

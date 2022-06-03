@@ -1,10 +1,23 @@
 ---
 # 调试模式 yes/no
 debug: yes
+
 # http(s) 服务
 app:
+  # 启用 https yes/no
+  https: yes
+  # 端口 http:80 https:443
+  port: 443
   # 资源文件位置
   resource: ../client
-  # 端口
-  port: 80
+  # 证书文件位置 https 模式下必须指定
+  sign_path:
+    crt: sign/server.crt
+    key: sign/server.key
+
+# webrtc 服务
+webrtc:
+  # 候选 ICE 列表
+  ice_list:
+    - stun:stun.l.google.com:19302
 ...
