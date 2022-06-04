@@ -35,6 +35,11 @@ func initSocketio() {
 		Sio.BroadcastToNamespace("/", "MessageFromPeer", c.ID())
 		log.Println("societio rev msg: " + msg + " from: " + c.ID())
 	})
+
+	// 测试事件
+	Sio.OnEvent("/", "echo", func(c socketio.Conn, msg string) {
+		log.Println("societio rev msg: " + msg + " from: " + c.ID())
+	})
 }
 func RunSocketio() {
 	if err := Sio.Serve(); err != nil {

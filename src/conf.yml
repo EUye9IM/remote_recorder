@@ -11,7 +11,7 @@ app:
   # 日志输出 debug 模式下无效
   log: server.log
   # 资源文件位置
-  resource: static
+  resource: public
   # 证书文件位置 http 模式下无效
   signature:
     crt: sign/cert.pem

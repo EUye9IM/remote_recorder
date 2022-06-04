@@ -1,5 +1,8 @@
 const socket = io()
 
+console.log("进入房间")
+socket.emit('echo', 'echo data')
+
 let localStream;
 let remoteStream;
 let peerConnection;
