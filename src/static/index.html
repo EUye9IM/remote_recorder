@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="UTF-8">
+	<title>webrtc</title>
+	<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+	<h1>Webrtc 实时通信</h1>
+
+	<video id="localVideo" autoplay></video>
+	<video id="remoteVideo" autoplay></video>
+
+	<div>
+		<button id="startButton">start</button>
+		<button id="callButton">call</button>
+		<button id="hangupButton">hang up</button>
+	</div>
+
+
+	<!-- adapter.js是将应用程序与规范更改和前缀差异隔离的垫片 -->
+	<script src="js/lib/adapter.js"></script>
+	<script src="js/script.js"></script>
+</body>
+</html>
