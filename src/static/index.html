@@ -6,10 +6,10 @@
 </head>
 
 <body>
-    <form id="idform" action="" onsubmit="return false;">
+    <!-- <form id="idform" action="" onsubmit="return false;">
         <input type="text" id="name">
         <button id="set_name">Set your name</button>
-    </form>
+    </form> -->
 
     <button id="ws-connect">Connect to WebSocket</button>
     <button id="ws-disconnect">Disconnect</button>
@@ -49,11 +49,6 @@
     $("#msg_host").html(host);
     $("#msg_prot").html(is_sec ? "https" : "http");
 
-    function processAnswer(answer) {
-        peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-        addlog("Set Remote Description")
-        return true;
-    };
 
     var ws = null;
     var name = "";
@@ -98,7 +93,16 @@
             // } else 
             if (data.type == "answer") {
                 // incoming answer
-                processAnswer(data);
+                peerConnection.setRemoteDescription(new RTCSessionDescription(data.data));
+                addlog("Set Remote Description")
+                return
+            }
+            if (json.action == "candidate") {
+                peerConnection.addIceCandidate(new RTCIceCandidate(json.data)).catch(e => {
+                    addlog("Error: add Ice Candidate: " + toString(e))
+                })
+                addlog("add Ice Candidate")
+                return
             }
         }
         ws.onerror = (e) => {
@@ -110,13 +114,31 @@
             addlog("Websocket opened");
 
             peerConnection = new RTCPeerConnection();
+            peerConnection.onicecandidate = (e) => {
+                if (!peerConnection || !e || !e.candidate) return;
+                var candidate = event.candidate;
+
+                upload = JSON.stringify({ type: "candidate", data: candidate });
+                ws.send(upload);
+                addlog("Websocket send candidate: " + upload);
+            }
             addlog("create PeerConnection")
 
             //datachannel
-            dataChannel = peerConnection.createDataChannel(name);
-            dataChannel.onclose = () => addlog('sendChannel has closed')
-            dataChannel.onopen = () => addlog('create DataChannel')
-            dataChannel.onmessage = e => addlog(`Message from DataChannel '${dataChannel.label}' payload '${e.data}'`)
+            dataChannel = peerConnection.createDataChannel("dc");
+            dataChannel.onclose = () => addlog('DataChannel close')
+            dataChannel.onopen = () => addlog('DataChannel open')
+            dataChannel.onerror = () => addlog('DataChannel error')
+            //dataChannel.onmessage = e => addlog(`Message from DataChannel '${dataChannel.label}' payload '${e.data}'`)
+            peerConnection.ondatachannel = (e) => {
+                console.log('peerConnection.ondatachannel event fired.');
+                ev.channel.onopen = () => {
+                    console.log('Data channel is open and ready to be used.');
+                };
+                ev.channel.onmessage = (e) => {
+                    addlog(`Message from DataChannel: ${e.data}'`);
+                }
+            }
             // maybe add stream
 
             //create offer
@@ -124,18 +146,17 @@
                 offerToReceiveAudio: false,
                 offerToReceiveVideo: false,
             };
-            peerConnection.createOffer(sdpConstraints).then(function (sdp) {
+            peerConnection.createOffer(sdpConstraints).then((sdp) => {
                 peerConnection.setLocalDescription(sdp);
-                upload = JSON.stringify(sdp);
+                upload = JSON.stringify({ type: "candidate", data: sdp });
                 ws.send(upload);
                 addlog("Websocket send offer: " + upload);
             }, function (err) {
                 addlog(toString(err))
             });
-
-
-        }
+        };
     });
+
     $("#ws-disconnect").click(() => {
         if (!ws)
             return;

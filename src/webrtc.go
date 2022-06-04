@@ -37,6 +37,13 @@ func WebsocketServer(c *gin.Context) {
 			log.Panicln("cannot close peerConnection: %v\n" + cErr.Error())
 		}
 	}()
+	peerConnection.OnICECandidate(func(i *webrtc.ICECandidate) {
+		upload := map[string]interface{}{
+			"type": "candidate",
+			"data": i,
+		}
+		conn.WriteJSON(upload)
+	})
 
 	peerConnection.OnConnectionStateChange(func(s webrtc.PeerConnectionState) {
 		log.Printf("Peer Connection State has changed: %s\n", s.String())
@@ -85,14 +92,7 @@ func WebsocketServer(c *gin.Context) {
 		}
 		offer := webrtc.SessionDescription{}
 		err = json.Unmarshal(content, &offer)
-		if err != nil {
-			log.Println("Websocket Read is not offer: " + err.Error() + "\n" + string(content))
-			continue
-		}
-		if offer.Type != webrtc.SDPTypeOffer {
-			log.Println("Websocket Read is not offer: " + string(content))
-			continue
-		} else {
+		if err == nil && offer.Type == webrtc.SDPTypeOffer {
 			log.Println("receive offer: " + offer.SDP)
 
 			// Set the remote SessionDescription
@@ -114,8 +114,22 @@ func WebsocketServer(c *gin.Context) {
 			}
 
 			//send answer back
-			conn.WriteJSON(answer)
-
+			upload := map[string]interface{}{
+				"type": "answer",
+				"data": answer,
+			}
+			conn.WriteJSON(upload)
+			continue
 		}
+
+		candidate := webrtc.ICECandidateInit{}
+		err = json.Unmarshal(content, &candidate)
+		if err == nil {
+			peerConnection.AddICECandidate(candidate)
+			log.Println("Add ice candidate: " + string(content))
+			continue
+		}
+
+		log.Println("Websocket Read unknown: " + string(content))
 	}
 }
