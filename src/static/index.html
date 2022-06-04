@@ -91,7 +91,7 @@
             //         processOffer(json.data)
             //     }
             // } else 
-            if (data.type == "answer") {
+            if (data.opt == "answer") {
                 // incoming answer
                 peerConnection.setRemoteDescription(new RTCSessionDescription(data.data));
                 addlog("Set Remote Description")
@@ -118,7 +118,7 @@
                 if (!peerConnection || !e || !e.candidate) return;
                 var candidate = event.candidate;
 
-                upload = JSON.stringify({ type: "candidate", data: candidate });
+                upload = JSON.stringify({ opt: "candidate", data: candidate });
                 ws.send(upload);
                 addlog("Websocket send candidate: " + upload);
             }
@@ -148,7 +148,7 @@
             };
             peerConnection.createOffer(sdpConstraints).then((sdp) => {
                 peerConnection.setLocalDescription(sdp);
-                upload = JSON.stringify({ type: "candidate", data: sdp });
+                upload = JSON.stringify({ opt: "offer", data: sdp });
                 ws.send(upload);
                 addlog("Websocket send offer: " + upload);
             }, function (err) {
