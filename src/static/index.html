@@ -79,18 +79,6 @@
         ws.onmessage = (e) => {
             addlog("Websocket message" + e.data);
             var data = JSON.parse(e.data);
-
-            // if (json.action == "candidate") {
-            //     if (json.to == user) {
-            //         processIce(json.data);
-            //     }
-            // } else if (json.action == "offer") {
-            //     // incoming offer
-            //     if (json.to == user) {
-            //         user2 = json.from;
-            //         processOffer(json.data)
-            //     }
-            // } else 
             if (data.opt == "answer") {
                 // incoming answer
                 peerConnection.setRemoteDescription(new RTCSessionDescription(data.data));
@@ -127,18 +115,15 @@
             //datachannel
             dataChannel = peerConnection.createDataChannel("dc");
             dataChannel.onclose = () => addlog('DataChannel close')
-            dataChannel.onopen = () => addlog('DataChannel open')
+            dataChannel.onopen = () => {
+                addlog('DataChannel open');
+                dataChannel.send("Hello world!");
+            }
             dataChannel.onerror = () => addlog('DataChannel error')
-            //dataChannel.onmessage = e => addlog(`Message from DataChannel '${dataChannel.label}' payload '${e.data}'`)
-            peerConnection.ondatachannel = (e) => {
-                console.log('peerConnection.ondatachannel event fired.');
-                ev.channel.onopen = () => {
-                    console.log('Data channel is open and ready to be used.');
-                };
-                ev.channel.onmessage = (e) => {
+            dataChannel.onmessage = (e) => {
                     addlog(`Message from DataChannel: ${e.data}'`);
                 }
-            }
+            
             // maybe add stream
 
             //create offer
@@ -163,120 +148,6 @@
         ws.close();
         ws = null;
     })
-
-    // function setMyId(e) {
-    //     e.preventDefault();
-    //     user = $("#user").val();
-    //     $("#dcform").show();
-    //     return false;
-    // }
-
-    // var config = {};
-    // var connection = {};
-
-
-
-
-    // function connectTo(e) {
-    //     e.preventDefault();
-    //     user2 = $("#connectTo").val();
-    //     openDataChannel();
-
-    //     var sdpConstraints = { offerToReceiveAudio: true, offerToReceiveVideo: false }
-    //     peerConnection.createOffer(sdpConstraints).then(function (sdp) {
-    //         peerConnection.setLocalDescription(sdp);
-    //         sendNegotiation("offer", sdp);
-    //         console.log("------ SEND OFFER ------");
-    //     }, function (err) {
-    //         console.log(err)
-    //     });
-
-    // }
-
-    // function sendDirect(e) {
-    //     e.preventDefault();
-    //     dataChannel.send($("#message").val());
-    //     $('body').append('Me: <div class="message">' + $("#message").val() + '</div>');
-    //     console.log("Sending over datachannel: " + $("#message").val());
-    //     $("#message").val('');
-    // }
-
-    // function getURLParameter(name) {
-    //     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [, ""])[1].replace(/\+/g, '%20')) || null
-    // }
-
-
-    // function openDataChannel() {
-    //     peerConnection = new webkitRTCPeerConnection(config, connection);
-    //     peerConnection.onicecandidate = function (e) {
-    //         if (!peerConnection || !e || !e.candidate) return;
-    //         var candidate = event.candidate;
-    //         sendNegotiation("candidate", candidate);
-    //     }
-
-    //     dataChannel = peerConnection.createDataChannel("datachannel", { reliable: false });
-
-    //     dataChannel.onopen = function () {
-    //         console.log("------ DATACHANNEL OPENED ------")
-    //         $("#sendform").show();
-    //     };
-    //     dataChannel.onclose = function () { console.log("------ DC closed! ------") };
-    //     dataChannel.onerror = function () { console.log("DC ERROR!!!") };
-
-    //     peerConnection.ondatachannel = function (ev) {
-    //         console.log('peerConnection.ondatachannel event fired.');
-    //         ev.channel.onopen = function () {
-    //             console.log('Data channel is open and ready to be used.');
-    //         };
-    //         ev.channel.onmessage = function (e) {
-    //             console.log("DC from [" + user2 + "]:" + e.data);
-    //             $('body').append(user2 + ': <div class="message from">' + e.data + '</div>')
-    //         }
-    //     };
-
-    //     return peerConnection
-    // }
-
-    // function sendNegotiation(type, sdp) {
-    //     var json = { from: user, to: user2, action: type, data: sdp };
-    //     ws.send(JSON.stringify(json));
-    //     console.log("Sending [" + user + "] to [" + user2 + "]: " + JSON.stringify(sdp));
-    // }
-
-    // function processOffer(offer) {
-    //     var peerConnection = openDataChannel();
-    //     peerConnection.setRemoteDescription(new RTCSessionDescription(offer)).catch(e => {
-    //         console.log(e)
-    //     });
-
-    //     var sdpConstraints = {
-    //         'mandatory':
-    //         {
-    //             'OfferToReceiveAudio': false,
-    //             'OfferToReceiveVideo': false
-    //         }
-    //     };
-
-    //     peerConnection.createAnswer(sdpConstraints).then(function (sdp) {
-    //         return peerConnection.setLocalDescription(sdp).then(function () {
-    //             sendNegotiation("answer", sdp);
-    //             console.log("------ SEND ANSWER ------");
-    //         })
-    //     }, function (err) {
-    //         console.log(err)
-    //     });
-    //     console.log("------ PROCESSED OFFER ------");
-
-    // };
-
-
-    // function processIce(iceCandidate) {
-    //     peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate)).catch(e => {
-    //         debugger
-    //         console.log(e)
-    //     })
-    // }
-
 </script>
 
 </html>
