@@ -19,9 +19,10 @@ var Cfg struct {
 			Key string
 		}
 	}
-	Webrtc struct {
-		Ice_list []string
-	}
+	// Webrtc struct {
+	// Websocket_port int
+	// Ice_list []string
+	// }
 }
 
 func init() {
