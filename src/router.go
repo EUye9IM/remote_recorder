@@ -33,7 +33,6 @@ func init() {
 	engin.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/static")
 	})
-
 	api := engin.Group("api")
 	apiRoute(api)
 }
@@ -44,6 +43,9 @@ func apiRoute(r *gin.RouterGroup) {
 	})
 	r.GET("/ws", WebsocketServer)
 
+	initSocketio()
+	r.GET("/sio/*any", gin.WrapH(Sio))
+	r.POST("/sio/*any", gin.WrapH(Sio))
 }
 
 func RunHttp() {

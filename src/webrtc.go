@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	socketio "github.com/googollee/go-socket.io"
 	"github.com/gorilla/websocket"
 )
 
@@ -15,7 +16,31 @@ var upgrader = websocket.Upgrader{
 }
 
 var conn_set = make(map[*websocket.Conn]bool)
+var Sio *socketio.Server
 
+func initSocketio() {
+	Sio = socketio.NewServer(nil)
+
+	Sio.OnConnect("/", func(c socketio.Conn) (err error) {
+		Sio.BroadcastToNamespace("/", "MemberJoined", c.ID())
+		log.Println("societio connected: " + c.ID())
+		return
+	})
+	Sio.OnDisconnect("/", func(c socketio.Conn, reason string) {
+		Sio.BroadcastToNamespace("/", "MemberLeft", c.ID())
+		log.Println("societio disconnected: " + c.ID() + " " + reason)
+	})
+
+	Sio.OnEvent("/", "MessageToPeer", func(c socketio.Conn, msg string) {
+		Sio.BroadcastToNamespace("/", "MessageFromPeer", c.ID())
+		log.Println("societio rev msg: " + msg + " from: " + c.ID())
+	})
+}
+func RunSocketio() {
+	if err := Sio.Serve(); err != nil {
+		log.Fatalf("socketio listen error: %s\n", err)
+	}
+}
 func WebsocketServer(c *gin.Context) {
 	log.Println("Websocket Connect")
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)

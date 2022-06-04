@@ -10,3 +10,5 @@
 | `MessageFromPeer` | emit    | on | 端对端传递数据 | 同上 |
 
 
+## api
+url：`/api/sio`

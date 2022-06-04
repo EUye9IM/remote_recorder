@@ -29,8 +29,27 @@ github.com/goccy/go-json/internal/encoder/vm_color_indent
 github.com/goccy/go-json/internal/encoder/vm_indent
 github.com/goccy/go-json/internal/errors
 github.com/goccy/go-json/internal/runtime
+# github.com/gofrs/uuid v4.0.0+incompatible
+## explicit
+github.com/gofrs/uuid
+# github.com/gomodule/redigo v1.8.4
+## explicit; go 1.14
+github.com/gomodule/redigo/redis
 # github.com/google/go-cmp v0.5.6
 ## explicit; go 1.8
+# github.com/googollee/go-socket.io v1.6.2
+## explicit; go 1.16
+github.com/googollee/go-socket.io
+github.com/googollee/go-socket.io/engineio
+github.com/googollee/go-socket.io/engineio/frame
+github.com/googollee/go-socket.io/engineio/packet
+github.com/googollee/go-socket.io/engineio/payload
+github.com/googollee/go-socket.io/engineio/session
+github.com/googollee/go-socket.io/engineio/transport
+github.com/googollee/go-socket.io/engineio/transport/polling
+github.com/googollee/go-socket.io/engineio/transport/utils
+github.com/googollee/go-socket.io/engineio/transport/websocket
+github.com/googollee/go-socket.io/parser
 # github.com/gorilla/websocket v1.5.0
 ## explicit; go 1.12
 github.com/gorilla/websocket

@@ -21,6 +21,7 @@ func main() {
 
 	// run server
 	go RunHttp()
+	go RunSocketio()
 
 	// kill signal
 	quit := make(chan os.Signal, 10)
@@ -30,4 +31,5 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	StopHttp()
+	Sio.Close()
 }
