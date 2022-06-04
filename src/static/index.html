@@ -40,24 +40,33 @@
     }
 
     var host = window.location.host;
-    var is_sec = window.location.protocol == "https:"
+    var is_sec = window.location.protocol == "https:";
+
+    var peerConnection = null;
+
+    var dataChannel = null;
 
     $("#msg_host").html(host);
     $("#msg_prot").html(is_sec ? "https" : "http");
 
+    function processAnswer(answer) {
+        peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        addlog("Set Remote Description")
+        return true;
+    };
 
     var ws = null;
     var name = "";
-    $("#set_name").click(function () {
-        if(ws){
+    $("#set_name").click(() => {
+        if (ws) {
             alert("disconnect first!");
             return
         }
         name = $("#name").val()
         $("#msg_name").html(name);
-        addlog("set name: "+name);
+        addlog("set name: " + name);
     });
-    $("#ws-connect").click(function () {
+    $("#ws-connect").click(() => {
         if (ws)
             return;
 
@@ -69,38 +78,65 @@
         addlog("connect to " + u);
         ws = new WebSocket(u);
 
-        ws.onopen = function (e) {
-            addlog("Websocket opened");
-        }
-        ws.onclose = function (e) {
+        ws.onclose = (e) => {
             addlog("Websocket closed");
         }
-        ws.onmessage = function (e) {
-            console.log("Websocket message received: " + e.data);
-            var json = JSON.parse(e.data);
+        ws.onmessage = (e) => {
+            addlog("Websocket message" + e.data);
+            var data = JSON.parse(e.data);
 
-            if (json.action == "candidate") {
-                if (json.to == user) {
-                    processIce(json.data);
-                }
-            } else if (json.action == "offer") {
-                // incoming offer
-                if (json.to == user) {
-                    user2 = json.from;
-                    processOffer(json.data)
-                }
-            } else if (json.action == "answer") {
+            // if (json.action == "candidate") {
+            //     if (json.to == user) {
+            //         processIce(json.data);
+            //     }
+            // } else if (json.action == "offer") {
+            //     // incoming offer
+            //     if (json.to == user) {
+            //         user2 = json.from;
+            //         processOffer(json.data)
+            //     }
+            // } else 
+            if (data.type == "answer") {
                 // incoming answer
-                if (json.to == user) {
-                    processAnswer(json.data);
-                }
+                processAnswer(data);
             }
         }
-        ws.onerror = function (e) {
+        ws.onerror = (e) => {
             addlog("Websocket error");
         }
+
+
+        ws.onopen = (e) => {
+            addlog("Websocket opened");
+
+            peerConnection = new RTCPeerConnection();
+            addlog("create PeerConnection")
+
+            //datachannel
+            dataChannel = peerConnection.createDataChannel(name);
+            dataChannel.onclose = () => addlog('sendChannel has closed')
+            dataChannel.onopen = () => addlog('create DataChannel')
+            dataChannel.onmessage = e => addlog(`Message from DataChannel '${dataChannel.label}' payload '${e.data}'`)
+            // maybe add stream
+
+            //create offer
+            var sdpConstraints = {
+                offerToReceiveAudio: false,
+                offerToReceiveVideo: false,
+            };
+            peerConnection.createOffer(sdpConstraints).then(function (sdp) {
+                peerConnection.setLocalDescription(sdp);
+                upload = JSON.stringify(sdp);
+                ws.send(upload);
+                addlog("Websocket send offer: " + upload);
+            }, function (err) {
+                addlog(toString(err))
+            });
+
+
+        }
     });
-    $("#ws-disconnect").click(function () {
+    $("#ws-disconnect").click(() => {
         if (!ws)
             return;
         ws.close();
@@ -117,8 +153,6 @@
     // var config = {};
     // var connection = {};
 
-    // var peerConnection;
-    // var dataChannel;
 
 
 
@@ -214,12 +248,6 @@
 
     // };
 
-    // function processAnswer(answer) {
-
-    //     peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-    //     console.log("------ PROCESSED ANSWER ------");
-    //     return true;
-    // };
 
     // function processIce(iceCandidate) {
     //     peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate)).catch(e => {
