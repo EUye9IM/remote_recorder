@@ -1,17 +1,19 @@
-const socket = io()
+const isSec = window.location.protocol == "https:";
 
-console.log("进入房间")
-socket.emit('echo', 'echo data')
-
+let ws;
 let localStream;
 let remoteStream;
 let peerConnection;
 
 const servers = {
-	iceServers: null,
+	iceServers: [
+		{
+			urls: 'stun:stun.l.google.com:19302'
+		}
+	],
 }
 
-let constraints = {
+const constraints = {
 	video: {
 		width: { min: 640, ideal: 1920, max: 1920 },
 		height: { min: 480, ideal: 1080, max: 1080 },
@@ -19,20 +21,67 @@ let constraints = {
 	audio: true
 }
 
-let init = async () => {
-	socket.on('MemberJoined', handleUserJoined)
-	socket.on('MemberLeft', handleUserLeft)
-	socket.on('MessageFromPeer', handleMessageFromPeer)
+const InitWebSocket = url => {
+	
+    ws = new WebSocket(url)
+    
+    ws.onmessage = handleMessage
+	ws.onopen = event => {
+		console.log('Websocket open.')
+	}
+	ws.onerror = event => {
+		console.log('Websocket error!')
+	}
+    ws.onclose = event => {
+        console.log('Websocket closed.')
+    }
+}
 
+const handleMessage = event => {
+    console.log(event.data)
+    const message = JSON.parse(event.data)
+    if (message.type === 'event') {
+        // 事件处理
+
+    }
+
+	if (message.type === 'offer') {
+		createAnswer(MemberId, message.offer)
+	}
+
+	if (message.type === 'answer') {
+		addAnswer(message.answer)
+	}
+
+	if (message.type === 'candidate') {
+		if (peerConnection) {
+			peerConnection.addIceCandidate(message.candidate)
+		}
+	}
+
+}
+const init = async () => {
+	const host = window.location.host;
+	if (isSec)
+		url = "wss://" + host + "/api/ws"
+	else
+		url = "ws://" + host + "/api/ws"
+
+	InitWebSocket(url)
+
+	// 需要绑定事件
+	// socket.on('MemberJoined', handleUserJoined)
+	// socket.on('MemberLeft', handleUserLeft)
+	// socket.on('MessageFromPeer', handleMessageFromPeer)
 }
 
 
-let handleUserJoined = async (MemberId) => {
+const handleUserJoined = async (MemberId) => {
 	console.log('A new user joined the channel: ', MemberId)
 	createOffer(MemberId)
 }
 
-let handleUserLeft = (MemberId) => {
+const handleUserLeft = (MemberId) => {
     document.getElementById('user-2').style.display = 'none'
     document.getElementById('user-1').classList.remove('smallFrame')
 }
@@ -43,10 +92,10 @@ async function createOffer(MemberId) {
 	await peerConnection.setLocalDescription(offer)
 
 	// 发送 offer 信息
-	socket.emit('message', {
+	ws.send({
 		'type': 'offer',
-		'offer': offer,
-	}, MemberId)
+		'offer': offer
+	})
 }
 
 
@@ -81,35 +130,15 @@ async function createPeerConnection(MemberId) {
 	peerConnection.onicecandidate = async event => {
 		if (event.candidate) {
 			// 发送 candidate 信息
-			socket.emit('MessageToPeer', {
+			ws.send({
 				'type': 'candidate',
-				'candidate': event.candidate,
-			}, MemberId)
-
+				'candidate': event.candidate
+			})
 		}
 	}
 }
 
-let handleMessageFromPeer = async (message, MemberId) => {
-	message = JSON.parse(message.text)
-
-	if (message.type === 'offer') {
-		createAnswer(MemberId, message.offer)
-	}
-
-	if (message.type === 'answer') {
-		addAnswer(message.answer)
-	}
-
-	if (message.type === 'candidate') {
-		if (peerConnection) {
-			peerConnection.addIceCandidate(message.candidate)
-		}
-	}
-
-}
-
-let createAnswer = async (MemberId, offer) => {
+const createAnswer = async (MemberId, offer) => {
 	await createPeerConnection(MemberId)
 	await peerConnection.setRemoteDescription(offer)
 
@@ -122,13 +151,13 @@ let createAnswer = async (MemberId, offer) => {
 	}, MemberId)
 }
 
-let addAnswer = async answer => {
+const addAnswer = async answer => {
 	if (!peerConnection.currentRemoteDescription) {
 		peerConnection.setRemoteDescription(answer)
 	}
 }
 
-let toggleCamera = async () => {
+const toggleCamera = async () => {
 	let videoTrack = localStream.getTracks().find(track => track.kind === 'video')
 
 	if (videoTrack.enabled) {
@@ -140,7 +169,7 @@ let toggleCamera = async () => {
 	}
 }
 
-let toggleMic = async () => {
+const toggleMic = async () => {
 	let audioTrack = localStream.getTracks().find(track => track.kind === 'audio')
 
 	if (audioTrack.enabled) {
