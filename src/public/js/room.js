@@ -1,8 +1,9 @@
 const isSec = window.location.protocol == "https:";
 
 let ws;
-let localStream;
-let remoteStream;
+let cameraStream;
+let screenStream;
+// let remoteStream;
 let peerConnection;
 
 const servers = {
@@ -22,28 +23,28 @@ const constraints = {
 }
 
 const InitWebSocket = url => {
-	
-    ws = new WebSocket(url)
-    
-    ws.onmessage = handleMessage
+
+	ws = new WebSocket(url)
+
+	ws.onmessage = handleMessage
 	ws.onopen = event => {
 		console.log('Websocket open.')
 	}
 	ws.onerror = event => {
 		console.log('Websocket error!')
 	}
-    ws.onclose = event => {
-        console.log('Websocket closed.')
-    }
+	ws.onclose = event => {
+		console.log('Websocket closed.')
+	}
 }
 
 const handleMessage = event => {
-    console.log(event.data)
-    const message = JSON.parse(event.data)
-    if (message.type === 'event') {
-        // 事件处理
+	console.log(event.data)
+	const message = JSON.parse(event.data)
+	if (message.type === 'event') {
+		// 事件处理
 
-    }
+	}
 
 	if (message.type === 'offer') {
 		createAnswer(MemberId, message.offer)
@@ -69,6 +70,8 @@ const init = async () => {
 
 	InitWebSocket(url)
 
+	createOffer('user')
+
 	// 需要绑定事件
 	// socket.on('MemberJoined', handleUserJoined)
 	// socket.on('MemberLeft', handleUserLeft)
@@ -82,8 +85,8 @@ const handleUserJoined = async (MemberId) => {
 }
 
 const handleUserLeft = (MemberId) => {
-    document.getElementById('user-2').style.display = 'none'
-    document.getElementById('user-1').classList.remove('smallFrame')
+	// document.getElementById('user-2').style.display = 'none'
+	// document.getElementById('user-1').classList.remove('smallFrame')
 }
 
 async function createOffer(MemberId) {
@@ -92,33 +95,55 @@ async function createOffer(MemberId) {
 	await peerConnection.setLocalDescription(offer)
 
 	// 发送 offer 信息
-	ws.send({
+	ws.send(JSON.stringify({
 		'type': 'offer',
 		'offer': offer
-	})
+	}))
 }
 
 
 async function createPeerConnection(MemberId) {
 	peerConnection = new RTCPeerConnection(servers)
-	remoteStream = new MediaStream()
-
-	document.getElementById('user-2').srcObject = remoteStream
-	document.getElementById('user-2').style.display = 'block'
-
-	document.getElementById('user-1').classList.add('smallFrame')
 
 	// 获取本地流
-	if (!localStream) {
-		localStream = await navigator.mediaDevices.getUserMedia({
+	if (!cameraStream) {
+		cameraStream = await navigator.mediaDevices.getUserMedia({
 			video: true,
 			audio: true,
 		})
-		document.getElementById('user-1').srcObject = localStream
+		document.getElementById('cameraStream').srcObject = cameraStream
 	}
 
-	localStream.getTracks().forEach(track => {
-		peerConnection.addTrack(track, localStream)
+	const displayMediaOptions = {
+		video: {
+			frameRate: { ideal: 15 }
+		}
+	}
+	if (!screenStream) {
+		try {
+			let displaySurface;
+			do {
+				screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
+				// 必须保证共享全屏
+				displaySurface = screenStream.getVideoTracks()[0].getSettings().displaySurface
+				if (displaySurface !== 'monitor') {
+					alert("你必须选择全屏共享！！！")
+				} 
+			} while (displaySurface !== 'monitor')
+
+		} catch (err) {
+			console.error("ScreenStream error: " + err)
+		}
+		document.getElementById('screenStream').srcObject = screenStream
+	}
+
+	// 添加音视频流
+	cameraStream.getTracks().forEach(track => {
+		peerConnection.addTrack(track, cameraStream)
+	})
+
+	screenStream.getTracks().forEach(track => {
+		peerConnection.addTrack(track, screenStream)
 	})
 
 	peerConnection.ontrack = envent => {
@@ -130,10 +155,10 @@ async function createPeerConnection(MemberId) {
 	peerConnection.onicecandidate = async event => {
 		if (event.candidate) {
 			// 发送 candidate 信息
-			ws.send({
+			ws.send(JSON.stringify({
 				'type': 'candidate',
 				'candidate': event.candidate
-			})
+			}))
 		}
 	}
 }
@@ -145,10 +170,10 @@ const createAnswer = async (MemberId, offer) => {
 	let answer = await peerConnection.createAnswer()
 	await peerConnection.setLocalDescription(answer)
 
-	socket.emit('MessageToPeer', {
+	ws.send(JSON.stringify({
 		'type': 'answer',
-		'answer': answer,
-	}, MemberId)
+		'answer': answer
+	}))
 }
 
 const addAnswer = async answer => {
@@ -157,29 +182,29 @@ const addAnswer = async answer => {
 	}
 }
 
-const toggleCamera = async () => {
-	let videoTrack = localStream.getTracks().find(track => track.kind === 'video')
+// const toggleCamera = async () => {
+// 	let videoTrack = localStream.getTracks().find(track => track.kind === 'video')
 
-	if (videoTrack.enabled) {
-		videoTrack.enabled = false
-		document.getElementById('camera-btn').style.backgroundColor = 'rgb(255, 80, 80)'
-	} else {
-		videoTrack.enabled = true
-		document.getElementById('camera-btn').style.backgroundColor = 'rgb(179, 102, 249, .9)'
-	}
-}
+// 	if (videoTrack.enabled) {
+// 		videoTrack.enabled = false
+// 		document.getElementById('camera-btn').style.backgroundColor = 'rgb(255, 80, 80)'
+// 	} else {
+// 		videoTrack.enabled = true
+// 		document.getElementById('camera-btn').style.backgroundColor = 'rgb(179, 102, 249, .9)'
+// 	}
+// }
 
-const toggleMic = async () => {
-	let audioTrack = localStream.getTracks().find(track => track.kind === 'audio')
+// const toggleMic = async () => {
+// 	let audioTrack = localStream.getTracks().find(track => track.kind === 'audio')
 
-	if (audioTrack.enabled) {
-		audioTrack.enabled = false
-		document.getElementById('mic-btn').style.backgroundColor = 'rgb(255, 80, 80)'
-	} else {
-		audioTrack.enabled = true
-		document.getElementById('mic-btn').style.backgroundColor = 'rgb(179, 102, 249, .9)'
-	}
-}
+// 	if (audioTrack.enabled) {
+// 		audioTrack.enabled = false
+// 		document.getElementById('mic-btn').style.backgroundColor = 'rgb(255, 80, 80)'
+// 	} else {
+// 		audioTrack.enabled = true
+// 		document.getElementById('mic-btn').style.backgroundColor = 'rgb(179, 102, 249, .9)'
+// 	}
+// }
 
 let leaveChannel = async () => {
 	// 关闭连接
@@ -189,7 +214,7 @@ let leaveChannel = async () => {
 
 window.addEventListener('beforeunload', leaveChannel)
 
-document.getElementById('camera-btn').addEventListener('click', toggleCamera)
-document.getElementById('mic-btn').addEventListener('click', toggleMic)
+// document.getElementById('camera-btn').addEventListener('click', toggleCamera)
+// document.getElementById('mic-btn').addEventListener('click', toggleMic)
 
 init()

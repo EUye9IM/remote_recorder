@@ -4,7 +4,7 @@
 <head>
   <meta charset='utf-8'>
   <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-  <title>PeerChat</title>
+  <title>考生端</title>
   <meta name='viewport' content='width=device-width, initial-scale=1'>
   <link rel='stylesheet' type='text/css' media='screen' href='./css/main.css'>
 </head>
@@ -12,31 +12,23 @@
 <body>
 
   <div id="videos">
-    <video class="video-player" id="user-1icons" autoplay playsinline></video>
-    <video class="video-player" id="user-2" autoplay playsinline></video>
+    <video class="video-player" id="cameraStream" autoplay playsinline></video>
+    <video class="video-player" id="screenStream" autoplay playsinline></video>
   </div>
 
-  <div id="controls">
+  <!-- <div id="controls">
+    <span>1234567</span>
+    <span>张三</span>
 
-    <div class="control-container" id="camera-btn">
-      <img src="icons/camera.png" />
-    </div>
+      <button id="camera-btn" class="active">摄像头</button>
+      <button id="mic-btn" class="active">麦克风</button>
+      <button id="screen-btn">屏幕共享</button>
+      <button id="leave-btn" style="background-color: #FF5050;">离开</button>
 
-    <div class="control-container" id="mic-btn">
-      <img src="icons/mic.png" />
-    </div>
-
-    <a href="lobby.html">
-      <div class="control-container" id="leave-btn">
-        <img src="icons/phone.png" />
-      </div>
-    </a>
-
-  </div>
+  </div> -->
 
 </body>
 <script src="./js/lib/adapter.js"></script>
-<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script src='./js/room.js'></script>
 
