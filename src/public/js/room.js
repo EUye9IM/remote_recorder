@@ -63,6 +63,7 @@ const handleMessage = event => {
 }
 const init = async () => {
 	const host = window.location.host;
+	let url;
 	if (isSec)
 		url = "wss://" + host + "/api/ws"
 	else
