@@ -28,18 +28,18 @@ const servers = {
     ],
 }
 
-const constraints = {
+const displayMediaOptions = {
+    video: {
+        frameRate: { ideal: 15 }
+    }
+}
+
+const mediaStreamConstrains = {
     video: {
         width: { min: 640, ideal: 1920, max: 1920 },
         height: { min: 480, ideal: 1080, max: 1080 },
     },
     audio: true
-}
-
-const displayMediaOptions = {
-    video: {
-        frameRate: { ideal: 15 }
-    }
 }
 
 const initWebSocket = url => {
@@ -141,15 +141,19 @@ const getLocalStream = async () => {
 
 async function getCameraStream() {
     try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
-        })
+        cameraStream = await navigator.mediaDevices.getUserMedia(mediaStreamConstrains)
         document.getElementById('cameraStream').srcObject = cameraStream
 
+        // 获取之后进行监测
+        cameraStream.oninactive = async () => {
+            console.log('camera inactive')
+            await getCameraStream()
+        }
+        
         // 添加音视频流
         cameraStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, cameraStream)
+            console.log(track.kind)
         })
 
     } catch (err) {
@@ -191,13 +195,43 @@ async function getScreenStream() {
             }
         } while (displaySurface !== 'monitor')
 
+        document.getElementById('screenStream').srcObject = screenStream
+
+        // 获取之后进行监测
+        screenStream.oninactive = async () => {
+            console.log('screen inactive')
+            await getScreenStream()
+        }
         screenStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, screenStream)
+            console.log(track.kind)
         })
+
     } catch (err) {
-        console.error("ScreenStream error: " + err)
+        console.log("ScreenStream error: " + err)
+        if (err.name == "NotFoundError" || err.name == "DevicesNotFoundError") {
+            //required track is missing 
+            alert('没有可用于捕获的屏幕视频源！！！')
+        } else if (err.name == "NotReadableError" || err.name == "TrackStartError") {
+            //webcam or mic are already in use 
+            alert('请解除设备占用问题！！！')
+        } else if (err.name == "NotAllowedError" || err.name == "PermissionDeniedError") {
+            //permission denied in browser 
+            alert('请授予权限！！！')
+        } else if (err.name == "OverconstrainedError") {
+            alert("流兼容错误！！！")
+        } else if (err.name == "AbortError") {
+            alert("出现错误或故障！！！")
+        } else if (err.name == "TypeError") {
+            //empty constraints object 
+            alert('约束错误，请联系开发人员！！！')
+        } else {
+            //other errors 
+            alert('你几乎不可能遇见这种错误！！！')
+        }
+        getScreenStream()
     }
-    document.getElementById('screenStream').srcObject = screenStream
+    
 }
 
 const createAnswer = async (offer) => {
@@ -228,3 +262,7 @@ let leaveChannel = async () => {
 }
 
 window.addEventListener('beforeunload', leaveChannel)
+window.onunload = () => {
+    peerConnection.close()
+    console.log('broswer refresh')
+}
