@@ -23,6 +23,9 @@ var Cfg struct {
 			Key string
 		}
 	}
+	// Codecs struct{
+
+	// }
 }
 
 func init() {

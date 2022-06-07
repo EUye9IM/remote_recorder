@@ -4,10 +4,16 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/pion/interceptor"
+	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v3/pkg/media"
+	"github.com/pion/webrtc/v3/pkg/media/h264writer"
+	"github.com/pion/webrtc/v3/pkg/media/oggwriter"
 )
 
 var upgrader = websocket.Upgrader{
@@ -28,9 +34,7 @@ func WebsocketServer(c *gin.Context) {
 	defer log.Println("Websocket Close")
 	defer delete(conn_set, ws)
 
-	// peerConnection := newConnection(ws)
-
-	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{})
+	peerConnection := newConnection(ws)
 	defer func() {
 		if cErr := peerConnection.Close(); cErr != nil {
 			log.Panicln("cannot close peerConnection: %v\n" + cErr.Error())
@@ -101,7 +105,35 @@ func logUnknown(content string) {
 }
 
 func newConnection(ws *websocket.Conn) *webrtc.PeerConnection {
-	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{})
+
+	// Create a MediaEngine object to configure the supported codec
+	m := &webrtc.MediaEngine{}
+
+	// Setup the codecs you want to use.
+	// We'll use a H264 and Opus but you can also define your own
+	if err := m.RegisterCodec(webrtc.RTPCodecParameters{
+		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264, ClockRate: 90000, Channels: 0, SDPFmtpLine: "", RTCPFeedback: nil},
+		PayloadType:        96,
+	}, webrtc.RTPCodecTypeVideo); err != nil {
+		log.Panicln(err)
+	}
+	if err := m.RegisterCodec(webrtc.RTPCodecParameters{
+		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeOpus, ClockRate: 48000, Channels: 0, SDPFmtpLine: "", RTCPFeedback: nil},
+		PayloadType:        111,
+	}, webrtc.RTPCodecTypeAudio); err != nil {
+		log.Panicln(err)
+	}
+	i := &interceptor.Registry{}
+
+	// Use the default set of Interceptors
+	if err := webrtc.RegisterDefaultInterceptors(m, i); err != nil {
+		log.Panicln(err)
+	}
+
+	// Create the API object with the MediaEngine
+	api := webrtc.NewAPI(webrtc.WithMediaEngine(m), webrtc.WithInterceptorRegistry(i))
+
+	peerConnection, err := api.NewPeerConnection(webrtc.Configuration{})
 	if err != nil {
 		log.Panicln("NewPeerConnection error: " + err.Error())
 	}
@@ -126,35 +158,66 @@ func newConnection(ws *websocket.Conn) *webrtc.PeerConnection {
 		}
 	})
 
-	// Register data channel creation handling
-	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
-		log.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
+	// Allow us to receive 1 audio track, and 1 video track
+	if _, err = peerConnection.AddTransceiverFromKind(webrtc.RTPCodecTypeAudio); err != nil {
+		log.Panicln(err)
+	} else if _, err = peerConnection.AddTransceiverFromKind(webrtc.RTPCodecTypeVideo); err != nil {
+		log.Panicln(err)
+	} else if _, err = peerConnection.AddTransceiverFromKind(webrtc.RTPCodecTypeVideo); err != nil {
+		log.Panicln(err)
+	}
 
-		// Register channel opening handling
-		d.OnOpen(func() {
-			log.Printf("Data channel '%s'-'%d' open. Random messages will now be sent to any connected DataChannels every 5 seconds\n", d.Label(), d.ID())
-
-			// for range time.NewTicker(5 * time.Second).C {
-			// 	message := signal.RandSeq(15)
-			// 	fmt.Printf("Sending '%s'\n", message)
-
-			// 	// Send the message as text
-			// 	sendErr := d.SendText(message)
-			// 	if sendErr != nil {
-			// 		panic(sendErr)
-			// 	}
-			// }
-		})
-
-		// Register text message handling
-		d.OnMessage(func(msg webrtc.DataChannelMessage) {
-			log.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(msg.Data))
-			d.SendText("Hi, " + d.Label() + ". You just say: '" + string(msg.Data) + "'.")
-		})
+	peerConnection.OnTrack(func(
+		track *webrtc.TrackRemote,
+		receiver *webrtc.RTPReceiver,
+	) {
+		log.Printf("%v\n", track.StreamID())
+		var file media.Writer
+		if track.Kind() == webrtc.RTPCodecTypeAudio {
+			file, err = oggwriter.New(track.StreamID()+".ogg", 48000, 2)
+			if err != nil {
+				log.Panicln(err)
+			}
+		} else if track.Kind() == webrtc.RTPCodecTypeVideo {
+			file, err = h264writer.New(track.StreamID() + ".mp4")
+			if err != nil {
+				log.Panicln(err)
+			}
+		}
+		go func() {
+			ticker := time.NewTicker(time.Second * 3)
+			for range ticker.C {
+				errSend := peerConnection.WriteRTCP([]rtcp.Packet{&rtcp.PictureLossIndication{MediaSSRC: uint32(track.SSRC())}})
+				if errSend != nil {
+					log.Println(errSend)
+					return
+				}
+			}
+		}()
+		saveToDisk(file, track)
 	})
+
 	return peerConnection
 }
+func saveToDisk(i media.Writer, track *webrtc.TrackRemote) {
+	defer func() {
+		if err := i.Close(); err != nil {
+			log.Println(err)
+		}
+	}()
 
+	for {
+		rtpPacket, _, err := track.ReadRTP()
+		if err != nil {
+			log.Println(err)
+			break
+		}
+		if err := i.WriteRTP(rtpPacket); err != nil {
+			log.Println(err)
+			break
+		}
+	}
+}
 func connectionAnswer(
 	peerConnection *webrtc.PeerConnection,
 	offer webrtc.SessionDescription,
