@@ -42,7 +42,7 @@ const mediaStreamConstrains = {
     audio: true
 }
 
-const initWebSocket = url => {
+const initWebSocket = (url) => {
     ws = new WebSocket(url)
 
     ws.onmessage = handleMessage
@@ -57,23 +57,40 @@ const initWebSocket = url => {
     }
 }
 
+// 等待websocket进入连接状态
+async function waitForSocketConnection(socket, callback) {
+    setTimeout(
+        () => {
+            if (socket.readyState === 1) {
+                console.log("Connection is made.")
+                if (callback != null) {
+                    callback();
+                }
+            } else {
+                console.log("wait for connection...")
+                waitForSocketConnection(socket, callback);
+            }
+        }, 5); // wait 5 milisecond for the connection...
+}
+
 const handleMessage = event => {
-    console.log(event.data)
     const message = JSON.parse(event.data)
-    if (message.type === 'event') {
+    console.log(message)
+    console.log(`recieve ${message.action}.`)
+    if (message.action === 'event') {
         // 事件处理
 
     }
 
-    if (message.type === 'offer') {
+    if (message.action === 'offer') {
         createAnswer(MemberId, message.data)
     }
 
-    if (message.type === 'answer') {
+    if (message.action === 'answer') {
         addAnswer(message.data)
     }
 
-    if (message.type === 'candidate') {
+    if (message.action === 'candidate') {
         if (peerConnection) {
             peerConnection.addIceCandidate(message.data)
         }
@@ -82,20 +99,25 @@ const handleMessage = event => {
 
 const handleUserJoined = async (MemberId) => {
     console.log('A new user joined the channel: ', MemberId)
-    createOffer(MemberId)
+    createOffer()
 }
 
-async function createOffer(MemberId) {
-    await createPeerConnection(MemberId)
-    let offer = await peerConnection.createOffer()
-    await peerConnection.setLocalDescription(offer)
+async function createOffer() {
+    try {
+        await createPeerConnection()
+        let offer = await peerConnection.createOffer()
+        await peerConnection.setLocalDescription(offer)
 
-    // 发送 offer 信息
-    ws.send(JSON.stringify({
-        'action': 'offer',
-        'data': offer
-    }))
-    console.log('offer send.')
+        // 发送 offer 信息
+        ws.send(JSON.stringify({
+            'action': 'offer',
+            'data': offer
+        }))
+        console.log('offer send.')
+    } catch (err) {
+        console.error('createPeerConnection, createOffer and setLocalDescription error: ' + err)
+    }
+
 }
 
 
@@ -149,7 +171,7 @@ async function getCameraStream() {
             console.log('camera inactive')
             await getCameraStream()
         }
-        
+
         // 添加音视频流
         cameraStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, cameraStream)
@@ -208,7 +230,7 @@ async function getScreenStream() {
         })
 
     } catch (err) {
-        console.log("ScreenStream error: " + err)
+        console.error("ScreenStream error: " + err)
         if (err.name == "NotFoundError" || err.name == "DevicesNotFoundError") {
             //required track is missing 
             alert('没有可用于捕获的屏幕视频源！！！')
@@ -231,7 +253,7 @@ async function getScreenStream() {
         }
         getScreenStream()
     }
-    
+
 }
 
 const createAnswer = async (offer) => {
@@ -250,7 +272,11 @@ const createAnswer = async (offer) => {
 
 const addAnswer = async answer => {
     if (!peerConnection.currentRemoteDescription) {
-        peerConnection.setRemoteDescription(answer)
+        try {
+            await peerConnection.setRemoteDescription(answer)
+        } catch (err) {
+            console.error('setRemoteDescription error: ' + err)
+        }
     }
 }
 

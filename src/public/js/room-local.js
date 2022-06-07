@@ -1,7 +1,10 @@
-const start = async () => {
+const start = () => {
     streamType = 'local'
 	initWebSocket(url)
-    createOffer()
+
+    waitForSocketConnection(ws, createOffer)
+
+    // createOffer()
 }
 
 start()

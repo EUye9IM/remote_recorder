@@ -68,7 +68,7 @@ func WebsocketServer(c *gin.Context) {
 				answer := connectionAnswer(peerConnection, offer)
 				//send answer back
 				upload := map[string]interface{}{
-					"Action": "answer",
+					"action": "answer",
 					"data":   answer,
 				}
 				ws.WriteJSON(upload)
