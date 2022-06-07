@@ -38,13 +38,39 @@ func WebsocketServer(c *gin.Context) {
 	}()
 
 	conn_set[ws] = ws
+	log.Println(ws)
 
 	for {
-		_, content, err := ws.ReadMessage()
+		msg_type, content, err := ws.ReadMessage()
 		if err != nil {
 			log.Println("Websocket Read Error: " + err.Error())
 			break
 		}
+
+		//**************************************************************************
+		// 转发信息测试
+
+		var js struct {
+			Action string      `json:"action"`
+			Data   interface{} `json:"data"`
+			Sender string	   `json:"from"`
+		}
+		err = json.Unmarshal(content, &js)
+		if err != nil {
+			log.Println("receive not json: " + string(content))
+			continue
+		}
+		for connect := range conn_set {
+			
+			err = connect.WriteMessage(msg_type, content)
+			if err != nil {
+				log.Println("Websocket Write Error: " + err.Error())
+				break
+			}
+		}
+		//**************************************************************************
+
+		/*
 		var js struct {
 			Action string      `json:"action"`
 			Data   interface{} `json:"data"`
@@ -93,6 +119,7 @@ func WebsocketServer(c *gin.Context) {
 			}
 			continue
 		}
+		*/
 		logUnknown(string(content))
 	}
 }

@@ -8,6 +8,7 @@ let cameraStream;
 let screenStream;
 let peerConnection;
 let streamType;
+let userType;
 
 
 const isSec = window.location.protocol == "https:";
@@ -75,16 +76,21 @@ async function waitForSocketConnection(socket, callback) {
 
 const handleMessage = event => {
     const message = JSON.parse(event.data)
+    console.log('message from ' + message.from)
+    if (message.from === userType) {
+        return
+    }
     console.log(message)
     console.log(`recieve ${message.action}.`)
+
     if (message.action === 'event') {
         // 事件处理
-
     }
 
     if (message.action === 'offer') {
-        createAnswer(MemberId, message.data)
+        createAnswer(message.data)
     }
+    
 
     if (message.action === 'answer') {
         addAnswer(message.data)
@@ -92,7 +98,9 @@ const handleMessage = event => {
 
     if (message.action === 'candidate') {
         if (peerConnection) {
-            peerConnection.addIceCandidate(message.data)
+            peerConnection.addIceCandidate(message.data).catch(err => {
+                peerConnection.addIceCandidate(message.data)
+            })
         }
     }
 }
@@ -111,7 +119,8 @@ async function createOffer() {
         // 发送 offer 信息
         ws.send(JSON.stringify({
             'action': 'offer',
-            'data': offer
+            'data': offer,
+            'from': userType
         }))
         console.log('offer send.')
     } catch (err) {
@@ -130,12 +139,16 @@ async function createPeerConnection() {
     else if (streamType === 'remote') {
         cameraStream = new MediaStream()
         screenStream = new MediaStream()
+        document.getElementById('cameraStream').srcObject = cameraStream
+        document.getElementById('screenStream').srcObject = screenStream
     }
 
-    peerConnection.ontrack = envent => {
-        envent.streams[0].getTracks().forEach(track => {
-            remoteStream.addTrack(track)
+    peerConnection.ontrack = event => {
+        event.streams[0].getTracks().forEach(track => {
+            cameraStream.addTrack(track)
+            console.log('track: ' + track.kind)
         })
+        
     }
 
     peerConnection.onicecandidate = async event => {
@@ -143,7 +156,8 @@ async function createPeerConnection() {
             // 发送 candidate 信息
             ws.send(JSON.stringify({
                 'action': 'candidate',
-                'data': event.candidate
+                'data': event.candidate,
+                'from': userType
             }))
             console.log('candidate send.')
         }
@@ -169,7 +183,7 @@ async function getCameraStream() {
         // 获取之后进行监测
         cameraStream.oninactive = async () => {
             console.log('camera inactive')
-            await getCameraStream()
+            getCameraStream()
         }
 
         // 添加音视频流
@@ -211,7 +225,7 @@ async function getScreenStream() {
         do {
             screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
             // 必须保证共享全屏
-            displaySurface = screenStream.getVideoTracks()[0].getSettings().displaySurface
+            displaySurface = await screenStream.getVideoTracks()[0].getSettings().displaySurface
             if (displaySurface !== 'monitor') {
                 alert("你必须选择全屏共享！！！")
             }
@@ -258,14 +272,15 @@ async function getScreenStream() {
 
 const createAnswer = async (offer) => {
     await createPeerConnection()
-    await peerConnection.setRemoteDescription(offer)
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
 
     let answer = await peerConnection.createAnswer()
     await peerConnection.setLocalDescription(answer)
 
     ws.send(JSON.stringify({
         'type': 'answer',
-        'data': answer
+        'data': answer,
+        'from': userType
     }))
     console.log('answer send.')
 }
