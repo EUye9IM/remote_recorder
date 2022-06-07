@@ -92,8 +92,8 @@ async function createOffer(MemberId) {
 
     // 发送 offer 信息
     ws.send(JSON.stringify({
-        'type': 'offer',
-        'offer': offer
+        'action': 'offer',
+        'data': offer
     }))
     console.log('offer send.')
 }
@@ -120,7 +120,7 @@ async function createPeerConnection() {
         if (event.candidate) {
             // 发送 candidate 信息
             ws.send(JSON.stringify({
-                'type': 'candidate',
+                'action': 'candidate',
                 'data': event.candidate
             }))
             console.log('candidate send.')
