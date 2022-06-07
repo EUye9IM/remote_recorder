@@ -8,8 +8,12 @@ import (
 )
 
 var Cfg struct {
-	Debug bool
-	App   struct {
+	Debug   bool
+	Account []struct {
+		Name     string
+		Password string
+	}
+	App struct {
 		Https     bool
 		Port      int
 		Log       string
@@ -19,10 +23,6 @@ var Cfg struct {
 			Key string
 		}
 	}
-	// Webrtc struct {
-	// Websocket_port int
-	// Ice_list []string
-	// }
 }
 
 func init() {

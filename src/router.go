@@ -42,10 +42,6 @@ func apiRoute(r *gin.RouterGroup) {
 		c.String(http.StatusOK, "pong")
 	})
 	r.GET("/ws", WebsocketServer)
-
-	initSocketio()
-	r.GET("/sio/*any", gin.WrapH(Sio))
-	r.POST("/sio/*any", gin.WrapH(Sio))
 }
 
 func RunHttp() {

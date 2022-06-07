@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	socketio "github.com/googollee/go-socket.io"
 	"github.com/gorilla/websocket"
 	"github.com/pion/webrtc/v3"
 )
@@ -17,47 +16,83 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var conn_set = make(map[*websocket.Conn]bool)
-var Sio *socketio.Server
+var conn_set = make(map[*websocket.Conn]*websocket.Conn)
 
-func initSocketio() {
-	Sio = socketio.NewServer(nil)
-
-	Sio.OnConnect("/", func(c socketio.Conn) (err error) {
-		Sio.BroadcastToNamespace("/", "MemberJoined", c.ID())
-		log.Println("societio connected: " + c.ID())
-		return
-	})
-	Sio.OnDisconnect("/", func(c socketio.Conn, reason string) {
-		Sio.BroadcastToNamespace("/", "MemberLeft", c.ID())
-		log.Println("societio disconnected: " + c.ID() + " " + reason)
-	})
-
-	Sio.OnEvent("/", "MessageToPeer", func(c socketio.Conn, msg string) {
-		Sio.BroadcastToNamespace("/", "MessageFromPeer", c.ID())
-		log.Println("societio rev msg: " + msg + " from: " + c.ID())
-	})
-
-	// 测试事件
-	Sio.OnEvent("/", "echo", func(c socketio.Conn, msg string) {
-		log.Println("societio rev msg: " + msg + " from: " + c.ID())
-	})
-}
-func RunSocketio() {
-	if err := Sio.Serve(); err != nil {
-		log.Fatalf("socketio listen error: %s\n", err)
-	}
-}
 func WebsocketServer(c *gin.Context) {
 	log.Println("Websocket Connect")
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Panicln("Websocket Error: " + err.Error())
 	}
-	defer conn.Close()
+	defer ws.Close()
 	defer log.Println("Websocket Close")
-	defer delete(conn_set, conn)
+	defer delete(conn_set, ws)
 
+	peerConnection := newConnection(ws)
+	conn_set[ws] = ws
+
+	for {
+		_, content, err := ws.ReadMessage()
+		if err != nil {
+			log.Println("Websocket Read Error: " + err.Error())
+			break
+		}
+		var js struct {
+			Action string      `json:"action"`
+			Data   interface{} `json:"data"`
+		}
+		err = json.Unmarshal(content, &js)
+		if err != nil {
+			log.Println("receive not json: " + string(content))
+			continue
+		}
+
+		if js.Action == "offer" {
+			var js struct {
+				Action string                    `json:"action"`
+				Data   webrtc.SessionDescription `json:"data"`
+			}
+			err = json.Unmarshal(content, &js)
+			offer := js.Data
+			if err == nil && offer.Type == webrtc.SDPTypeOffer {
+				log.Println("receive offer: " + offer.SDP)
+
+				answer := connectionAnswer(peerConnection, offer)
+				//send answer back
+				upload := map[string]interface{}{
+					"Action": "answer",
+					"data":   answer,
+				}
+				ws.WriteJSON(upload)
+				log.Println("Websocket write: answer")
+			} else {
+				logUnknown(string(content))
+			}
+			continue
+		}
+		if js.Action == "candidate" {
+			var js struct {
+				Action string                  `json:"action"`
+				Data   webrtc.ICECandidateInit `json:"data"`
+			}
+			err = json.Unmarshal(content, &js)
+			candidate := js.Data
+			if err == nil {
+				peerConnection.AddICECandidate(candidate)
+				log.Println("Add ice candidate: " + string(content))
+			} else {
+				logUnknown(string(content))
+			}
+			continue
+		}
+		logUnknown(string(content))
+	}
+}
+func logUnknown(content string) {
+	log.Println("Websocket Read unknown: " + string(content))
+}
+
+func newConnection(ws *websocket.Conn) *webrtc.PeerConnection {
 	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{})
 	if err != nil {
 		log.Panicln("NewPeerConnection error: " + err.Error())
@@ -70,10 +105,10 @@ func WebsocketServer(c *gin.Context) {
 
 	peerConnection.OnICECandidate(func(i *webrtc.ICECandidate) {
 		upload := map[string]interface{}{
-			"opt":  "candidate",
-			"data": i,
+			"action": "candidate",
+			"data":   i,
 		}
-		conn.WriteJSON(upload)
+		ws.WriteJSON(upload)
 		log.Println("Websocket write: candidate")
 	})
 
@@ -114,76 +149,30 @@ func WebsocketServer(c *gin.Context) {
 			d.SendText("Hi, " + d.Label() + ". You just say: '" + string(msg.Data) + "'.")
 		})
 	})
+	return peerConnection
+}
 
-	conn_set[conn] = true
+func connectionAnswer(
+	peerConnection *webrtc.PeerConnection,
+	offer webrtc.SessionDescription,
+) webrtc.SessionDescription {
 
-	for {
-		_, content, err := conn.ReadMessage()
-		if err != nil {
-			log.Println("Websocket Read Error: " + err.Error())
-			break
-		}
-		var js struct {
-			Opt  string      `json:"opt"`
-			Data interface{} `json:"data"`
-		}
-		err = json.Unmarshal(content, &js)
-		if err != nil {
-			log.Println("receive not json: " + string(content))
-		}
-		if js.Opt == "offer" {
-			var js struct {
-				Opt  string                    `json:"opt"`
-				Data webrtc.SessionDescription `json:"data"`
-			}
-			err = json.Unmarshal(content, &js)
-			offer := js.Data
-			if err == nil && offer.Type == webrtc.SDPTypeOffer {
-				log.Println("receive offer: " + offer.SDP)
-
-				// Set the remote SessionDescription
-				err = peerConnection.SetRemoteDescription(offer)
-				if err != nil {
-					log.Panicln(err)
-				}
-
-				// Create an answer
-				answer, err := peerConnection.CreateAnswer(nil)
-				if err != nil {
-					log.Panicln(err)
-				}
-
-				// Sets the LocalDescription, and starts our UDP listeners
-				err = peerConnection.SetLocalDescription(answer)
-				if err != nil {
-					log.Panicln(err)
-				}
-
-				//send answer back
-				upload := map[string]interface{}{
-					"opt":  "answer",
-					"data": answer,
-				}
-				conn.WriteJSON(upload)
-				log.Println("Websocket write: answer")
-			}
-			continue
-		}
-		if js.Opt == "candidate" {
-			var js struct {
-				Opt  string                  `json:"opt"`
-				Data webrtc.ICECandidateInit `json:"data"`
-			}
-			err = json.Unmarshal(content, &js)
-			candidate := js.Data
-			if err == nil {
-				peerConnection.AddICECandidate(candidate)
-				log.Println("Add ice candidate: " + string(content))
-				continue
-			}
-			continue
-		}
-
-		log.Println("Websocket Read unknown: " + string(content))
+	// Set the remote SessionDescription
+	err := peerConnection.SetRemoteDescription(offer)
+	if err != nil {
+		log.Panicln(err)
 	}
+
+	// Create an answer
+	answer, err := peerConnection.CreateAnswer(nil)
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	// Sets the LocalDescription, and starts our UDP listeners
+	err = peerConnection.SetLocalDescription(answer)
+	if err != nil {
+		log.Panicln(err)
+	}
+	return answer
 }
