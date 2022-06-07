@@ -2,6 +2,15 @@
 # 调试模式 yes/no
 debug: yes
 
+# 账号
+account:
+  -
+    name: root
+    password: root123
+  -
+    name: admin
+    password: admin123
+
 # http(s) 服务
 app:
   # 启用 https yes/no
