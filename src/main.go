@@ -16,8 +16,10 @@ func main() {
 			panic("Cannot open file: " + Cfg.App.Log + ".\n" + err.Error())
 		}
 		log.SetOutput(logFile)
+		log.SetFlags(log.Lmicroseconds | log.Ldate)
+	} else {
+		log.SetFlags(log.Lmicroseconds | log.Ldate | log.Lshortfile)
 	}
-	log.SetFlags(log.Lmicroseconds | log.Ldate)
 
 	// run server
 	go RunHttp()
