@@ -28,7 +28,15 @@ func WebsocketServer(c *gin.Context) {
 	defer log.Println("Websocket Close")
 	defer delete(conn_set, ws)
 
-	peerConnection := newConnection(ws)
+	// peerConnection := newConnection(ws)
+
+	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{})
+	defer func() {
+		if cErr := peerConnection.Close(); cErr != nil {
+			log.Panicln("cannot close peerConnection: %v\n" + cErr.Error())
+		}
+	}()
+
 	conn_set[ws] = ws
 
 	for {
@@ -97,11 +105,6 @@ func newConnection(ws *websocket.Conn) *webrtc.PeerConnection {
 	if err != nil {
 		log.Panicln("NewPeerConnection error: " + err.Error())
 	}
-	defer func() {
-		if cErr := peerConnection.Close(); cErr != nil {
-			log.Panicln("cannot close peerConnection: %v\n" + cErr.Error())
-		}
-	}()
 
 	peerConnection.OnICECandidate(func(i *webrtc.ICECandidate) {
 		upload := map[string]interface{}{

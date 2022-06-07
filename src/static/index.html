@@ -80,7 +80,7 @@
         ws.onmessage = (e) => {
             addlog("Websocket message" + e.data);
             var data = JSON.parse(e.data);
-            if (data.opt == "answer") {
+            if (data.action == "answer") {
                 // incoming answer
                 peerConnection.setRemoteDescription(new RTCSessionDescription(data.data));
                 addlog("Set Remote Description")
@@ -107,7 +107,7 @@
                 if (!peerConnection || !e || !e.candidate) return;
                 var candidate = event.candidate;
 
-                upload = JSON.stringify({ opt: "candidate", data: candidate });
+                upload = JSON.stringify({ action: "candidate", data: candidate });
                 ws.send(upload);
                 addlog("Websocket send candidate: " + upload);
             }
@@ -134,7 +134,7 @@
             };
             peerConnection.createOffer(sdpConstraints).then((sdp) => {
                 peerConnection.setLocalDescription(sdp);
-                upload = JSON.stringify({ opt: "offer", data: sdp });
+                upload = JSON.stringify({ action: "offer", data: sdp });
                 ws.send(upload);
                 addlog("Websocket send offer: " + upload);
             }, function (err) {
