@@ -11,7 +11,6 @@ let switchScreenAudio = document.getElementById('switchScreenAudio')
 btnSystem.onclick = async () => {
     btnSystem.disabled = true
     
-    await getLocalStream()
     if (mediaStreamConstrains.video) {
         switchCamera.checked = true
         switchCamera.disabled = false
@@ -31,11 +30,17 @@ btnSystem.onclick = async () => {
         switchScreen.checked = true
         switchScreenAudio.disabled = false
     }
+
+    waitForSocketConnection(ws, async () => {
+        await getStream(streamType)
+        await negotiation()
+    })
+
 }
 
 async function toggleChange(toggle, tracks, msg)
 {
-    console.log(tracks)
+    // console.log(tracks)
     if (toggle.checked) {
         if (tracks.length) {
             tracks.forEach(track => {

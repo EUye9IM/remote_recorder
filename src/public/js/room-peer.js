@@ -46,8 +46,14 @@ const mediaStreamConstrains = {
 }
 
 const offerOptions = {
+    // mandatory: { 
+    //     OfferToReceiveAudio: true, 
+    //     OfferToReceiveVideo: true
+    // },
     offerToReceiveAudio: true,
-    offerToReceiveVideo: true
+    offerToReceiveVideo: true,
+    // offerToSendAudio: true,
+    // offerToSendVideo: true
 }
 
 const initWebSocket = (url) => {
@@ -115,38 +121,27 @@ const handleUserJoined = async (MemberId) => {
     createOffer()
 }
 
-async function createOffer() {
+// 完成 sdp 交换过程，必须在 addtrack 后调用
+async function negotiation() {
     try {
-        await createPeerConnection()
-        let offer = await peerConnection.createOffer(offerOptions)
+        let offer = await peerConnection.createOffer()
         await peerConnection.setLocalDescription(offer)
 
         // 发送 offer 信息
         ws.send(JSON.stringify({
-            'action': 'offer',
+            action: 'offer',
             'data': offer,
             'from': userType
         }))
         console.log('offer send.')
     } catch (err) {
-        console.error('createPeerConnection, createOffer and setLocalDescription error: ' + err)
+        console.error('negotiation error: ', err)
     }
-
 }
 
 
 async function createPeerConnection() {
     peerConnection = new RTCPeerConnection(servers)
-
-    // if (streamType === 'local') {
-    //     await getLocalStream()
-    // }
-    if (streamType === 'remote') {
-        cameraStream = new MediaStream()
-        screenStream = new MediaStream()
-        document.getElementById('cameraStream').srcObject = cameraStream
-        document.getElementById('screenStream').srcObject = screenStream
-    }
 
     peerConnection.ontrack = event => {
         console.log("track event", event)
@@ -154,6 +149,8 @@ async function createPeerConnection() {
             cameraStream.addTrack(track)
             console.log('track: ' + track.kind)
         })
+        document.getElementById('cameraStream').srcObject = cameraStream
+        document.getElementById('screenStream').srcObject = screenStream
         
     }
 
@@ -170,16 +167,24 @@ async function createPeerConnection() {
     }
 }
 
-const getLocalStream = async () => {
-    // 获取本地流
-    if (!cameraStream) {
-        await getCameraStream()
+const getStream = async (__streamType) => {
+    if (__streamType === 'local') {
+        if (!cameraStream) {
+            await getCameraStream()
+        }
+
+        if (!screenStream) {
+            await getScreenStream()
+        }
+        // await getLocalStream()
+    }
+    if (__streamType === 'remote') {
+        cameraStream = new MediaStream()
+        screenStream = new MediaStream()
     }
 
-    if (!screenStream) {
-        await getScreenStream()
-    }
 }
+
 
 async function getCameraStream() {
     try {
@@ -299,14 +304,14 @@ const createAnswer = async (offer) => {
 }
 
 const addAnswer = async answer => {
-    if (!peerConnection.currentRemoteDescription) {
-        try {
-            await peerConnection.setRemoteDescription(answer)
-            console.log('set remote description finish')
-        } catch (err) {
-            console.error('setRemoteDescription error: ' + err)
-        }
+    // if (!peerConnection.currentRemoteDescription) {
+    try {
+        await peerConnection.setRemoteDescription(answer)
+        console.log('set remote description finish')
+    } catch (err) {
+        console.error('setRemoteDescription error: ' + err)
     }
+    // }
 }
 
 
