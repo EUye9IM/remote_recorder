@@ -10,6 +10,8 @@ let peerConnection;
 let streamType;
 let userType;
 
+const id2content  = {};
+
 
 const isSec = window.location.protocol == "https:";
 const host = window.location.host;
@@ -41,6 +43,11 @@ const mediaStreamConstrains = {
         height: { min: 480, ideal: 1080, max: 1080 },
     },
     audio: true
+}
+
+const offerOptions = {
+    offerToReceiveAudio: true,
+    offerToReceiveVideo: true
 }
 
 const initWebSocket = (url) => {
@@ -111,7 +118,7 @@ const handleUserJoined = async (MemberId) => {
 async function createOffer() {
     try {
         await createPeerConnection()
-        let offer = await peerConnection.createOffer()
+        let offer = await peerConnection.createOffer(offerOptions)
         await peerConnection.setLocalDescription(offer)
 
         // 发送 offer 信息
@@ -142,6 +149,7 @@ async function createPeerConnection() {
     }
 
     peerConnection.ontrack = event => {
+        console.log("track event", event)
         event.streams[0].getTracks().forEach(track => {
             cameraStream.addTrack(track)
             console.log('track: ' + track.kind)
@@ -187,7 +195,7 @@ async function getCameraStream() {
         // 添加音视频流
         cameraStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, cameraStream)
-            console.log(track.kind)
+            console.log('add track: ', track.kind)
         })
 
     } catch (err) {
@@ -286,7 +294,6 @@ const createAnswer = async (offer) => {
         'data': answer,
         'from': userType
     })
-    console.log('This is my anwser json: ' + json)
     ws.send(json)
     console.log('answer send.')
 }
@@ -295,6 +302,7 @@ const addAnswer = async answer => {
     if (!peerConnection.currentRemoteDescription) {
         try {
             await peerConnection.setRemoteDescription(answer)
+            console.log('set remote description finish')
         } catch (err) {
             console.error('setRemoteDescription error: ' + err)
         }
