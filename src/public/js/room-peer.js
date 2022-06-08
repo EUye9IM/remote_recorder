@@ -76,12 +76,12 @@ async function waitForSocketConnection(socket, callback) {
 
 const handleMessage = event => {
     const message = JSON.parse(event.data)
-    console.log('message from ' + message.from)
+    // console.log('message from ' + message.from)
     if (message.from === userType) {
         return
     }
     console.log(message)
-    console.log(`recieve ${message.action}.`)
+    console.log(`recieve ${message.action} from ${message.from}.`)
 
     if (message.action === 'event') {
         // 事件处理
@@ -98,9 +98,7 @@ const handleMessage = event => {
 
     if (message.action === 'candidate') {
         if (peerConnection) {
-            peerConnection.addIceCandidate(message.data).catch(err => {
-                peerConnection.addIceCandidate(message.data)
-            })
+            peerConnection.addIceCandidate(message.data)
         }
     }
 }
@@ -133,10 +131,10 @@ async function createOffer() {
 async function createPeerConnection() {
     peerConnection = new RTCPeerConnection(servers)
 
-    if (streamType === 'local') {
-        await getLocalStream()
-    }
-    else if (streamType === 'remote') {
+    // if (streamType === 'local') {
+    //     await getLocalStream()
+    // }
+    if (streamType === 'remote') {
         cameraStream = new MediaStream()
         screenStream = new MediaStream()
         document.getElementById('cameraStream').srcObject = cameraStream
@@ -210,7 +208,10 @@ async function getCameraStream() {
         } else if (err.name == "TypeError") {
             //empty constraints object 
             alert('请联系开发人员！！！')
-        } else {
+        } else if (err.name == 'AbortError') {
+            alert("Starting videoinput failed，请检查后重试")
+        }
+        else {
             //other errors 
             alert('你几乎不可能遇见这种错误！！！')
         }
@@ -261,7 +262,10 @@ async function getScreenStream() {
         } else if (err.name == "TypeError") {
             //empty constraints object 
             alert('约束错误，请联系开发人员！！！')
-        } else {
+        } else if (err.name == 'InvalidStateError') {
+            alert('部分浏览器错误，需要用户触发共享屏幕')
+        }
+        else {
             //other errors 
             alert('你几乎不可能遇见这种错误！！！')
         }
@@ -272,16 +276,18 @@ async function getScreenStream() {
 
 const createAnswer = async (offer) => {
     await createPeerConnection()
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
+    await peerConnection.setRemoteDescription(offer)
 
     let answer = await peerConnection.createAnswer()
     await peerConnection.setLocalDescription(answer)
 
-    ws.send(JSON.stringify({
-        'type': 'answer',
+    const json = JSON.stringify({
+        'action': 'answer',
         'data': answer,
         'from': userType
-    }))
+    })
+    console.log('This is my anwser json: ' + json)
+    ws.send(json)
     console.log('answer send.')
 }
 

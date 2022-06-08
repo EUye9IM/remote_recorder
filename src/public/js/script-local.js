@@ -1,0 +1,68 @@
+/********************************
+ * 设置按钮的事件
+ */
+
+let btnSystem = document.getElementById('btnSystem')
+let switchCamera = document.getElementById('switchCamera')
+let switchCameraAudio = document.getElementById('switchCameraAudio')
+let switchScreen = document.getElementById('switchScreen')
+let switchScreenAudio = document.getElementById('switchScreenAudio')
+
+btnSystem.onclick = async () => {
+    btnSystem.disabled = true
+    
+    await getLocalStream()
+    if (mediaStreamConstrains.video) {
+        switchCamera.checked = true
+        switchCamera.disabled = false
+    }
+
+    if (mediaStreamConstrains.audio) {
+        switchCameraAudio.checked = true
+        switchCameraAudio.disabled = false
+    }
+
+    if (displayMediaOptions.video) {
+        switchScreen.checked = true
+        switchScreen.disabled = false
+    }
+
+    if (displayMediaOptions.audio) {
+        switchScreen.checked = true
+        switchScreenAudio.disabled = false
+    }
+}
+
+async function toggleChange(toggle, tracks, msg)
+{
+    console.log(tracks)
+    if (toggle.checked) {
+        if (tracks.length) {
+            tracks.forEach(track => {
+                track.enabled = true
+            });
+        } else {
+            alert('系统不要求开启' + msg)
+        }
+    } else {
+        tracks.forEach(track => {
+            track.enabled = false
+        });
+    }
+}
+
+switchCamera.onchange = async () => {
+    await toggleChange(switchCamera, cameraStream.getVideoTracks(), '摄像头')
+}
+
+switchCameraAudio.onchange = async () => {
+    await toggleChange(switchCameraAudio, cameraStream.getAudioTracks(), '麦克风音频')
+}
+
+switchScreen.onchange = async () => {
+    await toggleChange(switchScreen, screenStream.getVideoTracks(), '共享屏幕')
+}
+
+switchScreenAudio.onchange = async () => {
+    await toggleChange(switchScreenAudio, screenStream.getAudioTracks(), '电脑音频')
+}
