@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v1.1.0
 	github.com/gin-gonic/gin v1.8.0
 	github.com/gorilla/websocket v1.5.0
+	github.com/mattn/go-sqlite3 v1.14.13
 	github.com/pion/interceptor v0.1.11
 	github.com/pion/rtcp v1.2.9
 	github.com/pion/webrtc/v3 v3.1.41

@@ -51,7 +51,6 @@ POST /api/login
 send
 {
 	user: 学号
-	password: 密码
 }
 return
 {

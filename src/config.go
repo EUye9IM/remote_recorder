@@ -29,9 +29,6 @@ var config struct {
 			Key string
 		}
 	}
-	// Codecs struct{
-
-	// }
 }
 
 func init() {
@@ -42,4 +39,5 @@ func init() {
 	if _, err := toml.DecodeFile(config_path, &config); err != nil {
 		panic("File: " + config_path + " error.\n" + err.Error())
 	}
+	dbinit()
 }

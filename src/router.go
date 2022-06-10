@@ -11,10 +11,9 @@ import (
 )
 
 type Uinfo struct {
-	No     string
-	Name   string
-	Level  byte
-	Enable byte
+	No    string
+	Name  string
+	Level string
 }
 
 var (
@@ -50,6 +49,7 @@ func apiRoute(r *gin.RouterGroup) {
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
 	})
+	// r.POST("/login")
 	r.GET("/ws", WebsocketServer)
 }
 
