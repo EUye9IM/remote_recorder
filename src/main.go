@@ -10,10 +10,10 @@ import (
 func main() {
 
 	// set log
-	if !Cfg.Debug && Cfg.App.Log != "" {
-		logFile, err := os.OpenFile(Cfg.App.Log, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if !config.Debug && config.App.Log != "" {
+		logFile, err := os.OpenFile(config.App.Log, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			panic("Cannot open file: " + Cfg.App.Log + ".\n" + err.Error())
+			panic("Cannot open file: " + config.App.Log + ".\n" + err.Error())
 		}
 		log.SetOutput(logFile)
 		log.SetFlags(log.Lmicroseconds | log.Ldate)

@@ -22,9 +22,64 @@ webrtc的信令服务需要自己实现，将采用websocket实现。
 
 ### sfu结构
 考虑到需要在服务端录屏，所以采用sfu结构，如下：
-![sfu](sfu.PNG)
+![sfu](readme_img/sfu.PNG)
 
 结合具体需求，并不是严格的sfu结构，学生端只有上传流，无下行流，而监考老师端可以无上传流，但必须可以查看某个学生的视频流，为了满足这个要求，需要考虑在查看的某个同学的时候建立`peerConnection`，具体实现，还需细节化。
 
 ## 行动
 客户端只要1对1，而服务端需要1对many，因此服务端需要在客户端的基础之上进行额外处理，行动吧...
+
+## api
+
+```
+登录
+POST /api/login
+send
+{
+	user: 学号
+	password: 密码
+}
+return
+{
+	res: 0/1/-1 成功/成功，但需要更改密码/失败
+	msg: 提示信息
+	token: token
+}
+
+登出
+POST /api/login
+send
+{
+	user: 学号
+	password: 密码
+}
+return
+{
+	res: 0/-1 成功/失败
+	msg: 提示信息
+}
+
+更改密码
+POST /api/chpw
+send
+{
+	password: 新密码
+}
+return
+{
+	res: 0/-1 成功/失败
+	msg: 提示信息
+}
+
+重置密码，需要重新登录
+POST /api/resetpw
+{
+	user: 学号
+	password: 新密码
+}
+return
+{
+	res: 0/-1 成功/失败
+	msg: 提示信息
+}
+```

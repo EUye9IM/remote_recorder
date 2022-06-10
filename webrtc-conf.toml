@@ -1,0 +1,38 @@
+# 调试模式 yes/no
+debug = true
+
+# 数据库
+[database]
+#路径
+path = "webrtc.db3"
+# 初始化数据库
+initial = true
+# 账号
+[[database.account]]
+no="1234567"
+name = "张三"
+password = "1234567"
+level = "0"
+enable = "1"
+
+[[database.account]]
+no="9999999"
+name = "监控"
+password = "9999999"
+level = "1"
+enable = "1"
+
+# 应用
+[app]
+# 启用 https true/false
+https = true
+# 端口 http:80 https:443
+port = 443
+# 日志输出位置 debug 模式下无效
+log = "server.log"
+# 资源文件位置
+resource = "static"
+# 证书文件位置 http 模式下无效
+[app.signature]
+crt = "sign/cert.pem"
+key = "sign/key.pem"

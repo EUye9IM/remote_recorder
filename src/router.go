@@ -10,26 +10,35 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Uinfo struct {
+	No     string
+	Name   string
+	Level  byte
+	Enable byte
+}
+
 var (
 	engin *gin.Engine
+
+	Users_info map[string]Uinfo
 )
 
 func init() {
-	if Cfg.Debug {
+	if config.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	engin = gin.New()
-	if Cfg.Debug {
+	if config.Debug {
 		engin.Use(gin.Logger(), gin.Recovery())
 	} else {
 		engin.Use(gin.Recovery())
 	}
 	engin.SetTrustedProxies(nil)
 
-	engin.Static("/static", Cfg.App.Resource)
+	engin.Static("/static", config.App.Resource)
 	engin.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/static")
 	})
@@ -45,17 +54,17 @@ func apiRoute(r *gin.RouterGroup) {
 }
 
 func RunHttp() {
-	log.Println("Server start")
-	if Cfg.App.Https {
-		engin.RunTLS(":"+strconv.Itoa(Cfg.App.Port),
-			Cfg.App.Signature.Crt, Cfg.App.Signature.Key)
+	log.Println("Server start with config:", config)
+	if config.App.Https {
+		engin.RunTLS(":"+strconv.Itoa(config.App.Port),
+			config.App.Signature.Crt, config.App.Signature.Key)
 	} else {
-		engin.Run(":" + strconv.Itoa(Cfg.App.Port))
+		engin.Run(":" + strconv.Itoa(config.App.Port))
 	}
 }
 func StopHttp() {
 	srv := &http.Server{
-		Addr:    ":" + strconv.Itoa(Cfg.App.Port),
+		Addr:    ":" + strconv.Itoa(config.App.Port),
 		Handler: engin,
 	}
 
