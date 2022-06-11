@@ -33,6 +33,11 @@ btnSystem.onclick = async () => {
 
     waitForSocketConnection(ws, async () => {
         await getStream(streamType)
+        await ws.send(JSON.stringify({
+            'action': 'streamid',
+            'data': id2content,
+            'from': userType
+        }))
         await negotiation()
     })
 

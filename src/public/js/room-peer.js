@@ -10,7 +10,7 @@ let peerConnection;
 let streamType;
 let userType;
 
-const id2content  = {};
+let id2content  = {};
 
 
 const isSec = window.location.protocol == "https:";
@@ -45,16 +45,15 @@ const mediaStreamConstrains = {
     audio: true
 }
 
-const offerOptions = {
-    // mandatory: { 
-    //     OfferToReceiveAudio: true, 
-    //     OfferToReceiveVideo: true
-    // },
-    offerToReceiveAudio: true,
-    offerToReceiveVideo: true,
-    // offerToSendAudio: true,
-    // offerToSendVideo: true
-}
+// const offerOptions = { // mandatory: { 
+//     //     OfferToReceiveAudio: true, 
+//     //     OfferToReceiveVideo: true
+//     // },
+//     offerToReceiveAudio: true,
+//     offerToReceiveVideo: true,
+//     // offerToSendAudio: true,
+//     // offerToSendVideo: true
+// }
 
 const initWebSocket = (url) => {
     ws = new WebSocket(url)
@@ -98,6 +97,10 @@ const handleMessage = event => {
 
     if (message.action === 'event') {
         // 事件处理
+    }
+
+    if (message.action === 'streamid') {
+        id2content = message.data
     }
 
     if (message.action === 'offer') {
@@ -145,13 +148,27 @@ async function createPeerConnection() {
 
     peerConnection.ontrack = event => {
         console.log("track event", event)
-        event.streams[0].getTracks().forEach(track => {
-            cameraStream.addTrack(track)
-            console.log('track: ' + track.kind)
-        })
-        document.getElementById('cameraStream').srcObject = cameraStream
-        document.getElementById('screenStream').srcObject = screenStream
+        if (id2content.camera === event.streams[0].id) {
+            console.log('camera stream track')
+            event.streams[0].getTracks().forEach(track => {
+                cameraStream.addTrack(track)
+                // console.log('track: ' + track.kind)
+            })
+            document.getElementById('cameraStream').srcObject = cameraStream
+
+        } else if (id2content.screen === event.streams[0].id) {
+            console.log('screen stream track')
+            event.streams[0].getTracks().forEach(track => {
+                screenStream.addTrack(track)
+                // console.log('track: ' + track.kind)
+            })
+            document.getElementById('screenStream').srcObject = screenStream
+        }
         
+        // event.streams[0].getTracks().forEach(track => {
+        //     screenStream.addTrack(track)
+        //     console.log('track: ' + track.kind)
+        // })
     }
 
     peerConnection.onicecandidate = async event => {
@@ -202,6 +219,8 @@ async function getCameraStream() {
             peerConnection.addTrack(track, cameraStream)
             console.log('add track: ', track.kind)
         })
+
+        id2content['camera'] = cameraStream.id
 
     } catch (err) {
         console.log('CameraStream error: ' + err)
@@ -256,6 +275,8 @@ async function getScreenStream() {
             peerConnection.addTrack(track, screenStream)
             console.log(track.kind)
         })
+
+        id2content['screen'] = screenStream.id
 
     } catch (err) {
         console.error("ScreenStream error: " + err)
