@@ -5,12 +5,12 @@
 // 拦截直接输入url的非法访问
 if (document.referrer === '') {
     alert('非法访问页面，请先登录！！！')
-    window.location = 'login.html'
+    window.location = '/login'
 }
 
 const userId = sessionStorage.getItem('userId')
 if (userId === null) {
-    window.location = 'login.html'
+    window.location = '/login'
 }
 
 // $('#userId').attr('placeholder', userId)

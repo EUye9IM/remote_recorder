@@ -67,11 +67,11 @@
     // 拦截直接输入url的非法访问
     if (document.referrer === '') {
         alert('非法访问页面，请登录！！！')
-        window.location = 'login.html'
+        window.location = '/login'
     }
     const userId = sessionStorage.getItem('userId')
     if (userId === null) {
-        window.location = 'login.html'
+        window.location = '/login'
     }
 
     $('#userId').attr('placeholder', userId)
@@ -112,11 +112,11 @@
                     // 改密成功
                     if (data.res === 0) {
                         alert('改密成功，请重新登录！！！')
-                        $(location).attr('href', 'login.html')
+                        $(location).attr('href', '/login')
                         return
                     }
                     // 改密失败
-                    if (res === -1) {
+                    if (data.res === -1) {
                         alert(data.msg)
                         return
                     }

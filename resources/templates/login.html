@@ -80,7 +80,7 @@
                     const res = data.res
                     // 验证成功，登录考试系统
                     if (res === 0) {
-                        $(location).attr('href', 'index.html')
+                        $(location).attr('href', '/index')
                         return
                     }
                     // 需要更改密码 
@@ -88,7 +88,7 @@
                         sessionStorage.setItem('userId', userId)
                         sessionStorage.setItem('password', password)
                         alert(data.msg)
-                        window.location = 'passchange.html'
+                        window.location = '/passchange'
                         return
                     }
                     // 验证失败
