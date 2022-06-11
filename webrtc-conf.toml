@@ -18,7 +18,7 @@ enable = "1"
 # 密码
 [password]
 # 复杂密码检查
-strict_mode = true
+strict_mode = false
 #最小长度
 length = 8
 #最少大写字母
@@ -39,7 +39,6 @@ enable = "1"
 
 # 应用
 [app]
-domain = "localhost"
 # 端口 http:80 https:443
 port = 443
 # 启用 https true/false
