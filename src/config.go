@@ -19,9 +19,18 @@ var config struct {
 			Enable   string
 		}
 	}
+	Password struct {
+		Strict_mode bool
+		Length      int
+		Upper       int
+		Lower       int
+		Digital     int
+		Other       int
+	}
 	App struct {
-		Https     bool
+		Domain    string
 		Port      int
+		Https     bool
 		Log       string
 		Resource  string
 		Signature struct {

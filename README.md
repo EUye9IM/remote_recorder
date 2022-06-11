@@ -43,15 +43,10 @@ return
 {
 	res: 0/1/-1 成功/成功，但需要更改密码/失败
 	msg: 提示信息
-	token: token
 }
 
 登出
-POST /api/login
-send
-{
-	user: 学号
-}
+POST /api/logout
 return
 {
 	res: 0/-1 成功/失败

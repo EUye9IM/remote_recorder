@@ -15,6 +15,21 @@ password = "1234567"
 level = "0"
 enable = "1"
 
+# 密码
+[password]
+# 复杂密码检查
+strict_mode = false
+#最小长度
+length = 8
+#最少大写字母
+upper = 1
+#最少小写字母
+lower = 1
+#最少数字字符
+digital = 1
+#最少特殊字符
+other = 1
+
 [[database.account]]
 no="9999999"
 name = "监控"
@@ -24,10 +39,11 @@ enable = "1"
 
 # 应用
 [app]
-# 启用 https true/false
-https = true
+domain = "localhost"
 # 端口 http:80 https:443
 port = 443
+# 启用 https true/false
+https = true
 # 日志输出位置 debug 模式下无效
 log = "server.log"
 # 资源文件位置

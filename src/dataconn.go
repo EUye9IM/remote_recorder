@@ -49,7 +49,7 @@ func dbinit() {
 		}
 	}
 }
-func login(user_no, password string) (Uinfo, bool) {
+func dblogin(user_no, password string) (Uinfo, bool) {
 	uinfo := Uinfo{}
 	row := db.QueryRow(`
 		select stu_no, stu_name, stu_userlevel
@@ -62,7 +62,7 @@ func login(user_no, password string) (Uinfo, bool) {
 	}
 	return uinfo, res
 }
-func chpw(user_no, password string) bool {
+func dbchpw(user_no, password string) bool {
 	res, err := db.Exec(`
 		update student
 		set stu_password = ?
