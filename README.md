@@ -44,6 +44,20 @@ return
 	res: 0/1/-1 成功/成功，但需要更改密码/失败
 	msg: 提示信息
 }
+获取当前cookie用户信息
+POST /api/uinfo
+return
+{
+	res: 0/1/-1 成功/成功，但需要更改密码/失败
+	msg: 提示信息
+	data: {
+		no: 账号
+		name: 名字
+		level: 等级
+		enable: 账户可用性。false 表示需要先更换密码。与数据库中的stu_enable无关
+	}
+}
+
 
 登出
 POST /api/logout

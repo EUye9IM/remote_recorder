@@ -54,6 +54,7 @@ func apiRoute(r *gin.RouterGroup) {
 		c.String(http.StatusOK, "pong")
 	})
 	r.POST("/login", handleLogin)
+	r.POST("/uinfo", handleUinfo)
 	r.POST("/logout", handleLogout)
 	r.POST("/chpw", handleChpw)
 	r.POST("/resetpw", handleResetpw)
@@ -174,6 +175,38 @@ func handleLogout(c *gin.Context) {
 		"msg": "成功",
 	})
 }
+func handleUinfo(c *gin.Context) {
+	token, err := c.Cookie("token")
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"res":  -1,
+			"msg":  "请先登录",
+			"data": "",
+		})
+		return
+	}
+	uinfo, ok := Users_info[token]
+	if !ok {
+		c.SetCookie("token", "", -1, "/", config.App.Domain, config.App.Https, true)
+		c.JSON(http.StatusOK, gin.H{
+			"res":  -1,
+			"msg":  "无效cookie，请重新登录",
+			"data": "",
+		})
+		return
+	}
+	c.SetCookie("token", "", -1, "/", config.App.Domain, config.App.Https, true)
+	c.JSON(http.StatusOK, gin.H{
+		"res": 0,
+		"msg": "成功",
+		"data": gin.H{
+			"no":     uinfo.No,
+			"name":   uinfo.Name,
+			"level":  uinfo.Level,
+			"enable": uinfo.Enable,
+		},
+	})
+}
 func handleChpw(c *gin.Context) {
 	token, err := c.Cookie("token")
 	if err != nil {
@@ -224,7 +257,6 @@ func handleChpw(c *gin.Context) {
 		"res": 0,
 		"msg": "成功，请重新登录",
 	})
-	log.Print("test")
 }
 
 func handleResetpw(c *gin.Context) {
