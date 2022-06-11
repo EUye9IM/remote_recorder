@@ -195,7 +195,6 @@ func handleUinfo(c *gin.Context) {
 		})
 		return
 	}
-	c.SetCookie("token", "", -1, "/", config.App.Domain, config.App.Https, true)
 	c.JSON(http.StatusOK, gin.H{
 		"res": 0,
 		"msg": "成功",
