@@ -2,20 +2,35 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
 
-	"gopkg.in/yaml.v3"
+	"github.com/BurntSushi/toml"
 )
 
-var Cfg struct {
-	Debug   bool
-	Account []struct {
-		Name     string
-		Password string
+var config struct {
+	Debug    bool
+	Database struct {
+		Path    string
+		Initial bool
+		Account []struct {
+			No       string
+			Name     string
+			Password string
+			Level    string
+			Enable   string
+		}
+	}
+	Password struct {
+		Strict_mode bool
+		Length      int
+		Upper       int
+		Lower       int
+		Digital     int
+		Other       int
 	}
 	App struct {
-		Https     bool
+		Domain    string
 		Port      int
+		Https     bool
 		Log       string
 		Resource  string
 		Signature struct {
@@ -23,19 +38,15 @@ var Cfg struct {
 			Key string
 		}
 	}
-	// Codecs struct{
-
-	// }
 }
 
 func init() {
 	var config_path string
-	flag.StringVar(&config_path, "c", "conf.yml", "set path to configuration file")
+	flag.StringVar(&config_path, "c", "webrtc-conf.toml", "set path to configuration file")
 	flag.Parse()
 
-	if conf_file, err := ioutil.ReadFile(config_path); err != nil {
-		panic("Cannot open file: " + config_path + ".\n" + err.Error())
-	} else if err := yaml.Unmarshal(conf_file, &Cfg); err != nil {
+	if _, err := toml.DecodeFile(config_path, &config); err != nil {
 		panic("File: " + config_path + " error.\n" + err.Error())
 	}
+	dbinit()
 }
