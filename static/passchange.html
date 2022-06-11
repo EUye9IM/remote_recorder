@@ -18,16 +18,27 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-3">
-                <h6 class="text-center"><b>用户登录</b></h6>
+                <h6 class="text-center"><b>用户改密</b></h6>
                 <form id="form" action="javascript:alert( 'success!' );">
                     <div class="form-group">
                         <label for="exampleInputEmail1">学号</label>
-                        <input type="text" class="form-control" id="userId" placeholder="">
+                        <input type="text" class="form-control" id="userId" placeholder="" disabled>
                     </div>
                     <div class="form-group">
-                        <label for="exampleInputPassword1">密码</label>
-                        <input type="password" class="form-control" id="password">
+                        <label for="exampleInputPassword1">原始密码</label>
+                        <input type="password" class="form-control" id="oldPassword">
                     </div>
+
+                    <div class="form-group">
+                        <label for="exampleInputPassword1">新密码</label>
+                        <input type="password" class="form-control" id="newPassword">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exampleInputPassword1">确认密码</label>
+                        <input type="password" class="form-control" id="confirmPassword">
+                    </div>
+
                     <div class="col text-right">
                         <button type="submit" class="btn btn-primary justify-content-md-center">提交</button>
                     </div>
@@ -53,45 +64,58 @@
 </body>
 
 <script>
+    // 拦截直接输入url的非法访问
+    if (document.referrer === '') {
+        alert('非法访问页面，请登录！！！')
+        window.location = 'login.html'
+    }
+    const userId = sessionStorage.getItem('userId')
+    if (userId === null) {
+        window.location = 'login.html'
+    }
+
+    $('#userId').attr('placeholder', userId)
+</script>
+
+<script>
     // 使用jQuery实现post等功能
     $(function () {
         $("#form").submit(event => {
             event.preventDefault()
-            const userId = $('#userId').val()
-            const password = $('#password').val()
-
-            if (userId === '') {
-                alert('学号不可以为空！')
+            const oldPassword = $('#oldPassword').val()
+            const newPassword = $('#newPassword').val()
+            const confirmPassword = $('#confirmPassword').val()
+            
+            if (oldPassword === '' || newPassword === '' || confirmPassword === '') {
+                alert('密码不可以为空！！！')
                 return
             }
-
-            if (password === '') {
-                alert('密码不可以为空！')
+            if (oldPassword !== sessionStorage.getItem('password')) {
+                alert('原始密码错误！！！')
+                return
+            }
+            if (newPassword !== confirmPassword) {
+                alert('两次密码不一致！！！')
+                return
+            }
+            if (confirmPassword === sessionStorage.getItem('password')) {
+                alert('新密码不可以和原始密码相同！！！')
                 return
             }
 
             $.post(
-                '/api/login',
+                '/api/chpw',
                 {
-                    user: userId,
-                    password: password
+                    password: confirmPassword
                 },
                 data => {
-                    const res = data.res
-                    // 验证成功，登录考试系统
-                    if (res === 0) {
-                        $(location).attr('href', 'index.html')
+                    // 改密成功
+                    if (data.res === 0) {
+                        alert('改密成功，请重新登录！！！')
+                        $(location).attr('href', 'login.html')
                         return
                     }
-                    // 需要更改密码 
-                    if (res === 1) {
-                        sessionStorage.setItem('userId', userId)
-                        sessionStorage.setItem('password', password)
-                        alert(data.msg)
-                        window.location = 'passchange.html'
-                        return
-                    }
-                    // 验证失败
+                    // 改密失败
                     if (res === -1) {
                         alert(data.msg)
                         return
@@ -102,5 +126,7 @@
 
     });
 </script>
+
+
 
 </html>

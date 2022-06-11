@@ -109,4 +109,5 @@ dist
 # audio/vedio
 *.oog
 *.webm
+*.mp4
 webrtc.db3

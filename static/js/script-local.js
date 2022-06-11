@@ -1,7 +1,22 @@
 /********************************
- * 设置按钮的事件
+ * 设置按钮的事件等配置
  */
 
+// 拦截直接输入url的非法访问
+if (document.referrer === '') {
+    alert('非法访问页面，请先登录！！！')
+    window.location = 'login.html'
+}
+
+const userId = sessionStorage.getItem('userId')
+if (userId === null) {
+    window.location = 'login.html'
+}
+
+// $('#userId').attr('placeholder', userId)
+
+
+// 下面处理按钮事件
 let btnSystem = document.getElementById('btnSystem')
 let switchCamera = document.getElementById('switchCamera')
 let switchCameraAudio = document.getElementById('switchCameraAudio')
@@ -76,3 +91,5 @@ switchScreen.onchange = async () => {
 switchScreenAudio.onchange = async () => {
     await toggleChange(switchScreenAudio, screenStream.getAudioTracks(), '电脑音频')
 }
+
+
