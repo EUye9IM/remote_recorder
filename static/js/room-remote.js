@@ -1,8 +1,9 @@
-const start = () => {
+const start = async () => {
     streamType = 'remote'
     userType = 'teacher'
-    console.log('teacher')
 	initWebSocket(url)
+    await getStream(streamType)
+    // createPeerConnection()
     // createOffer()
 }
 

@@ -16,9 +16,18 @@
     height: 400px;
 }
 
-#controls{
+#camera-controls{
     position: fixed;
-    bottom: 20px;
+    bottom: 30%;
+    left: 50%;
+    transform:translateX(-50%);
+    display: flex;
+    gap: 1em;
+}
+
+#screen-controls{
+    position: fixed;
+    bottom: 20%;
     left: 50%;
     transform:translateX(-50%);
     display: flex;

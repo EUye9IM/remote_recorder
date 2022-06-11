@@ -10,6 +10,8 @@ let peerConnection;
 let streamType;
 let userType;
 
+let id2content  = {};
+
 
 const isSec = window.location.protocol == "https:";
 const host = window.location.host;
@@ -42,6 +44,16 @@ const mediaStreamConstrains = {
     },
     audio: true
 }
+
+// const offerOptions = { // mandatory: { 
+//     //     OfferToReceiveAudio: true, 
+//     //     OfferToReceiveVideo: true
+//     // },
+//     offerToReceiveAudio: true,
+//     offerToReceiveVideo: true,
+//     // offerToSendAudio: true,
+//     // offerToSendVideo: true
+// }
 
 const initWebSocket = (url) => {
     ws = new WebSocket(url)
@@ -76,15 +88,19 @@ async function waitForSocketConnection(socket, callback) {
 
 const handleMessage = event => {
     const message = JSON.parse(event.data)
-    console.log('message from ' + message.from)
+    // console.log('message from ' + message.from)
     if (message.from === userType) {
         return
     }
     console.log(message)
-    console.log(`recieve ${message.action}.`)
+    console.log(`recieve ${message.action} from ${message.from}.`)
 
     if (message.action === 'event') {
         // 事件处理
+    }
+
+    if (message.action === 'streamid') {
+        id2content = message.data
     }
 
     if (message.action === 'offer') {
@@ -98,9 +114,7 @@ const handleMessage = event => {
 
     if (message.action === 'candidate') {
         if (peerConnection) {
-            peerConnection.addIceCandidate(message.data).catch(err => {
-                peerConnection.addIceCandidate(message.data)
-            })
+            peerConnection.addIceCandidate(message.data)
         }
     }
 }
@@ -110,45 +124,51 @@ const handleUserJoined = async (MemberId) => {
     createOffer()
 }
 
-async function createOffer() {
+// 完成 sdp 交换过程，必须在 addtrack 后调用
+async function negotiation() {
     try {
-        await createPeerConnection()
         let offer = await peerConnection.createOffer()
         await peerConnection.setLocalDescription(offer)
 
         // 发送 offer 信息
         ws.send(JSON.stringify({
-            'action': 'offer',
+            action: 'offer',
             'data': offer,
             'from': userType
         }))
         console.log('offer send.')
     } catch (err) {
-        console.error('createPeerConnection, createOffer and setLocalDescription error: ' + err)
+        console.error('negotiation error: ', err)
     }
-
 }
 
 
 async function createPeerConnection() {
     peerConnection = new RTCPeerConnection(servers)
 
-    if (streamType === 'local') {
-        await getLocalStream()
-    }
-    else if (streamType === 'remote') {
-        cameraStream = new MediaStream()
-        screenStream = new MediaStream()
-        document.getElementById('cameraStream').srcObject = cameraStream
-        document.getElementById('screenStream').srcObject = screenStream
-    }
-
     peerConnection.ontrack = event => {
-        event.streams[0].getTracks().forEach(track => {
-            cameraStream.addTrack(track)
-            console.log('track: ' + track.kind)
-        })
+        console.log("track event", event)
+        if (id2content.camera === event.streams[0].id) {
+            console.log('camera stream track')
+            event.streams[0].getTracks().forEach(track => {
+                cameraStream.addTrack(track)
+                // console.log('track: ' + track.kind)
+            })
+            document.getElementById('cameraStream').srcObject = cameraStream
+
+        } else if (id2content.screen === event.streams[0].id) {
+            console.log('screen stream track')
+            event.streams[0].getTracks().forEach(track => {
+                screenStream.addTrack(track)
+                // console.log('track: ' + track.kind)
+            })
+            document.getElementById('screenStream').srcObject = screenStream
+        }
         
+        // event.streams[0].getTracks().forEach(track => {
+        //     screenStream.addTrack(track)
+        //     console.log('track: ' + track.kind)
+        // })
     }
 
     peerConnection.onicecandidate = async event => {
@@ -164,16 +184,24 @@ async function createPeerConnection() {
     }
 }
 
-const getLocalStream = async () => {
-    // 获取本地流
-    if (!cameraStream) {
-        await getCameraStream()
+const getStream = async (__streamType) => {
+    if (__streamType === 'local') {
+        if (!cameraStream) {
+            await getCameraStream()
+        }
+
+        if (!screenStream) {
+            await getScreenStream()
+        }
+        // await getLocalStream()
+    }
+    if (__streamType === 'remote') {
+        cameraStream = new MediaStream()
+        screenStream = new MediaStream()
     }
 
-    if (!screenStream) {
-        await getScreenStream()
-    }
 }
+
 
 async function getCameraStream() {
     try {
@@ -189,8 +217,10 @@ async function getCameraStream() {
         // 添加音视频流
         cameraStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, cameraStream)
-            console.log(track.kind)
+            console.log('add track: ', track.kind)
         })
+
+        id2content['camera'] = cameraStream.id
 
     } catch (err) {
         console.log('CameraStream error: ' + err)
@@ -210,7 +240,10 @@ async function getCameraStream() {
         } else if (err.name == "TypeError") {
             //empty constraints object 
             alert('请联系开发人员！！！')
-        } else {
+        } else if (err.name == 'AbortError') {
+            alert("Starting videoinput failed，请检查后重试")
+        }
+        else {
             //other errors 
             alert('你几乎不可能遇见这种错误！！！')
         }
@@ -243,6 +276,8 @@ async function getScreenStream() {
             console.log(track.kind)
         })
 
+        id2content['screen'] = screenStream.id
+
     } catch (err) {
         console.error("ScreenStream error: " + err)
         if (err.name == "NotFoundError" || err.name == "DevicesNotFoundError") {
@@ -261,7 +296,10 @@ async function getScreenStream() {
         } else if (err.name == "TypeError") {
             //empty constraints object 
             alert('约束错误，请联系开发人员！！！')
-        } else {
+        } else if (err.name == 'InvalidStateError') {
+            alert('部分浏览器错误，需要用户触发共享屏幕')
+        }
+        else {
             //other errors 
             alert('你几乎不可能遇见这种错误！！！')
         }
@@ -272,27 +310,29 @@ async function getScreenStream() {
 
 const createAnswer = async (offer) => {
     await createPeerConnection()
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
+    await peerConnection.setRemoteDescription(offer)
 
     let answer = await peerConnection.createAnswer()
     await peerConnection.setLocalDescription(answer)
 
-    ws.send(JSON.stringify({
-        'type': 'answer',
+    const json = JSON.stringify({
+        'action': 'answer',
         'data': answer,
         'from': userType
-    }))
+    })
+    ws.send(json)
     console.log('answer send.')
 }
 
 const addAnswer = async answer => {
-    if (!peerConnection.currentRemoteDescription) {
-        try {
-            await peerConnection.setRemoteDescription(answer)
-        } catch (err) {
-            console.error('setRemoteDescription error: ' + err)
-        }
+    // if (!peerConnection.currentRemoteDescription) {
+    try {
+        await peerConnection.setRemoteDescription(answer)
+        console.log('set remote description finish')
+    } catch (err) {
+        console.error('setRemoteDescription error: ' + err)
     }
+    // }
 }
 
 
