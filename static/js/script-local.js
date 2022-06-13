@@ -2,14 +2,14 @@
  * 设置按钮的事件等配置
  */
 
+// 无用户则进入登录界面
+const userId = sessionStorage.getItem('userId')
+if (userId === null) {
+    window.location = 'login.html'
+}
 // 拦截直接输入url的非法访问
 if (document.referrer === '') {
     alert('非法访问页面，请先登录！！！')
-    window.location = 'login.html'
-}
-
-const userId = sessionStorage.getItem('userId')
-if (userId === null) {
     window.location = 'login.html'
 }
 
