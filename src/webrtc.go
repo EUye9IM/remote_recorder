@@ -22,9 +22,15 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var conn_set = make(map[*websocket.Conn]*websocket.Conn)
+type conn_data struct {
+	wsconn *websocket.Conn
+	uinfo  Uinfo
+}
+
+var conn_set = make(map[*conn_data]bool)
 
 func WebsocketServer(c *gin.Context) {
+	data := new(conn_data)
 	log.Println("Websocket Connect")
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -32,7 +38,10 @@ func WebsocketServer(c *gin.Context) {
 	}
 	defer ws.Close()
 	defer log.Println("Websocket Close")
-	defer delete(conn_set, ws)
+	conn_set[data] = true
+	defer delete(conn_set, data)
+
+	data.wsconn = ws
 
 	peerConnection := newConnection(ws)
 	defer func() {
@@ -40,8 +49,6 @@ func WebsocketServer(c *gin.Context) {
 			log.Panicln("cannot close peerConnection: %v\n" + cErr.Error())
 		}
 	}()
-
-	conn_set[ws] = ws
 
 	for {
 		_, content, err := ws.ReadMessage()
@@ -58,7 +65,22 @@ func WebsocketServer(c *gin.Context) {
 			log.Println("receive not json: " + string(content))
 			continue
 		}
-
+		// TODO change action name
+		if js.Action == "init" {
+			var js struct {
+				Action string `json:"action"`
+				Data   struct {
+					Token string `json:"token"`
+				} `json:"data"`
+			}
+			err = json.Unmarshal(content, &js)
+			if err != nil {
+				log.Print(err)
+				continue
+			}
+			data.uinfo = Users_info[js.Data.Token]
+			continue
+		}
 		if js.Action == "offer" {
 			var js struct {
 				Action string                    `json:"action"`
