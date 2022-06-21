@@ -107,7 +107,7 @@ dist
 # executable
 *.exe
 # audio/vedio
-*.oog
+*.ogg
 *.webm
 *.mp4
 webrtc.db3

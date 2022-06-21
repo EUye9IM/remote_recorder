@@ -28,7 +28,6 @@ var config struct {
 		Other       int
 	}
 	App struct {
-		Domain    string
 		Port      int
 		Https     bool
 		Log       string

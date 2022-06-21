@@ -1,4 +1,4 @@
-# 调试模式 yes/no
+# 调试模式
 debug = true
 
 # 数据库
@@ -39,7 +39,6 @@ enable = "1"
 
 # 应用
 [app]
-domain = "localhost"
 # 端口 http:80 https:443
 port = 443
 # 启用 https true/false
@@ -47,7 +46,7 @@ https = true
 # 日志输出位置 debug 模式下无效
 log = "server.log"
 # 资源文件位置
-resource = "static"
+resource = "resources"
 # 证书文件位置 http 模式下无效
 [app.signature]
 crt = "sign/cert.pem"

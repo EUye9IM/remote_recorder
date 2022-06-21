@@ -16,7 +16,7 @@ webrtc的信令服务需要自己实现，将采用websocket实现。
 ```json
 {
     "type": t,
-    t: data
+    'data': data
 }
 ```
 
@@ -31,63 +31,94 @@ webrtc的信令服务需要自己实现，将采用websocket实现。
 
 ## api
 
-```
-登录
-POST /api/login
-send
+### 登录
+
+- POST
+- `/api/login`
+- send
+	- user: 学号
+	- password: 密码
+- return
+	- res: 0/1/-1 成功/成功，但需要更改密码/失败
+	- msg: 提示信息
+
+### 获取当前cookie用户信息
+
+- POST
+- `/api/uinfo`
+- return
+	- res: 0/1/-1 成功/成功，但需要更改密码/失败
+	- msg: 提示信息
+	- data:
+		- no: 账号
+		- name: 名字
+		- level: 等级
+		- enable: 账户可用性。false 表示需要先更换密码。与数据库中的stu_enable无关
+
+### 登出
+
+- POST
+- `/api/logout`
+- return
+	- res: 0/-1 成功/失败
+	- msg: 提示信息
+
+### 更改密码
+
+- POST
+- `/api/chpw`
+- send
+	- password: 新密码
+- return
+	- res: 0/-1 成功/失败
+	- msg: 提示信息
+
+### 重置密码，需要重新登录
+
+- POST
+- `/api/resetpw`
+	- user: 学号
+	- password: 新密码
+- return
+	- res: 0/-1 成功/失败
+	- msg: 提示信息
+
+## 路由
+
+由于改成模板渲染，现在可以设定路由了。
+
+但是，如果前端需要添加新的页面需要新的路由，要手动添加。
+
+好处是，有一些跳转可以有后端参与，用户也不会随便就拿到页面。
+
+现在的路由是这样：
+
+![route.png](readme_img/route.png)
+
+
+## 监考端相关设计
+### 有新成员加入
+如果有新成员加入，页面需要局部刷新，此部分使用信令服务器事件触发实现，发送的json如下：
+```json
 {
-	user: 学号
-	password: 密码
-}
-return
-{
-	res: 0/1/-1 成功/成功，但需要更改密码/失败
-	msg: 提示信息
-}
-获取当前cookie用户信息
-POST /api/uinfo
-return
-{
-	res: 0/1/-1 成功/成功，但需要更改密码/失败
-	msg: 提示信息
-	data: {
-		no: 账号
-		name: 名字
-		level: 等级
-		enable: 账户可用性。false 表示需要先更换密码。与数据库中的stu_enable无关
+	"type": "event",
+	"data": {
+		"event": "MemberJoined",
+		"memberid": memberid,
 	}
 }
-
-
-登出
-POST /api/logout
-return
-{
-	res: 0/-1 成功/失败
-	msg: 提示信息
-}
-
-更改密码
-POST /api/chpw
-send
-{
-	password: 新密码
-}
-return
-{
-	res: 0/-1 成功/失败
-	msg: 提示信息
-}
-
-重置密码，需要重新登录
-POST /api/resetpw
-{
-	user: 学号
-	password: 新密码
-}
-return
-{
-	res: 0/-1 成功/失败
-	msg: 提示信息
-}
 ```
+这条数据是要求服务端发送给所有监考老师端，并不发送给学生端
+
+因为监考端需要获取到某一个成员的信息，故考虑使用get/post请求，如下所示：
+- POST
+- `/api/search_by_id`
+	- userid: 学号
+- return
+	- res: 0/-1 成功/失败
+	- name: 名字
+	- stu_enable: 0/1 
+
+
+### 存储在会人员信息
+因为监考端需要实时显示在会人员的信息，所以考虑使用get/post从服务端获取到信息，需要获取的信息有：
