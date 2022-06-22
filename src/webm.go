@@ -21,7 +21,7 @@ type webmSaver struct {
 	audioBuilder, videoBuilder     *samplebuilder.SampleBuilder
 	audioTimestamp, videoTimestamp time.Duration
 	file_name                      string
-	closed                         bool
+	// closed                         bool
 }
 
 func newWebmSaver(fname string) *webmSaver {
@@ -29,27 +29,27 @@ func newWebmSaver(fname string) *webmSaver {
 		audioBuilder: samplebuilder.New(10, &codecs.OpusPacket{}, 48000),
 		videoBuilder: samplebuilder.New(10, &codecs.VP8Packet{}, 90000),
 		file_name:    fname,
-		closed:       false,
+		// closed:       false,
 	}
 }
 
-func (s *webmSaver) Close() {
-	if s.closed {
-		return
-	}
-	s.closed = true
+// func (s *webmSaver) Close() {
+// 	if s.closed {
+// 		return
+// 	}
+// 	s.closed = true
 
-	if s.audioWriter != nil {
-		if err := s.audioWriter.Close(); err != nil {
-			log.Print(err)
-		}
-	}
-	if s.videoWriter != nil {
-		if err := s.videoWriter.Close(); err != nil {
-			log.Print(err)
-		}
-	}
-}
+// 	if s.audioWriter != nil {
+// 		if err := s.audioWriter.Close(); err != nil {
+// 			log.Print(err)
+// 		}
+// 	}
+// 	if s.videoWriter != nil {
+// 		if err := s.videoWriter.Close(); err != nil {
+// 			log.Print(err)
+// 		}
+// 	}
+// }
 func (s *webmSaver) PushOpus(rtpPacket *rtp.Packet) {
 	// 不加这个会panic
 	if s.audioBuilder == nil {

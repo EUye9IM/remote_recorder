@@ -90,8 +90,8 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 
 		switch track.Kind() {
 		case webrtc.RTPCodecTypeAudio:
-			saveToDisk(saver_camera, conn_data, track)
-			saveToDisk(saver_screen, conn_data, track)
+			go saveToDisk(saver_camera, conn_data, track)
+			go saveToDisk(saver_screen, conn_data, track)
 		case webrtc.RTPCodecTypeVideo:
 			if track.StreamID() == conn_data.stream_id.camera {
 				log.Println("ONTRACK-CAMERA")
@@ -125,9 +125,21 @@ func saveToDisk(saver *webmSaver, conn_data *ConnData, track *webrtc.TrackRemote
 			saver.PushVP8(rtpPacket)
 		}
 	}
-	conn_data.close.Lock()
-	defer conn_data.close.Unlock()
-	saver.Close()
+	switch track.Kind() {
+	case webrtc.RTPCodecTypeAudio:
+		if saver.audioWriter != nil {
+			if err := saver.audioWriter.Close(); err != nil {
+				log.Print(err)
+			}
+		}
+	case webrtc.RTPCodecTypeVideo:
+		if saver.videoWriter != nil {
+			if err := saver.videoWriter.Close(); err != nil {
+				log.Print(err)
+			}
+		}
+	}
+
 }
 func connectionAnswer(
 	peerConnection *webrtc.PeerConnection,
