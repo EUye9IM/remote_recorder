@@ -26,4 +26,10 @@ data: {
     uuid: uuid
 }
 
+----------------------
+action: 'uuid'
+data: {
+    'uuid': uuid
+}
+
 ```

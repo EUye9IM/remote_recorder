@@ -37,6 +37,7 @@ btnSystem.onclick = async () => {
         await ws.send(JSON.stringify({
             'action': 'streamid',
             'data': id2content,
+            'uuid': serveruuid
         }))
         await negotiation(serveruuid)
     })

@@ -124,6 +124,11 @@ const handleMessage = event => {
     if (message.action === 'candidate') {
         AddIceCandidate(uuid, data)
     }
+
+    if (message.action === 'uuid') {
+        // 有监考端需要查看
+        createPeerConnection(uuid)
+    }
 }
 
 const AddIceCandidate = (uuid, candidate) => {
@@ -151,10 +156,10 @@ const handleEvent = async (data) => {
 
 // 完成 sdp 交换过程，必须在 addtrack 后调用
 async function negotiation(uuid) {
-    let peerConnection = peerConnections[uuid]
+    // let peerConnection = peerConnections[uuid]
     try {
-        let offer = await peerConnection.createOffer()
-        await peerConnection.setLocalDescription(offer)
+        let offer = await peerConnections[uuid].createOffer()
+        await peerConnections[uuid].setLocalDescription(offer)
 
         // 发送 offer 信息
         ws.send(JSON.stringify({
@@ -172,10 +177,9 @@ async function negotiation(uuid) {
 
 
 async function createPeerConnection(uuid) {
-    let peerConnection = new RTCPeerConnection(servers)
-    peerConnections[uuid] = peerConnection
+    peerConnections[uuid] = new RTCPeerConnection(servers)
 
-    peerConnection.ontrack = event => {
+    peerConnections[uuid].ontrack = event => {
         console.log("track event", event)
         if (id2content.camera === event.streams[0].id) {
             console.log('camera stream track')
@@ -200,7 +204,7 @@ async function createPeerConnection(uuid) {
         // })
     }
 
-    peerConnection.onicecandidate = async event => {
+    peerConnections[uuid].onicecandidate = async event => {
         if (event.candidate) {
             // 发送 candidate 信息
             ws.send(JSON.stringify({
@@ -227,15 +231,15 @@ const getStream = async () => {
 
 // 为一个peerConnection添加流
 async function streamAddTrack(uuid) {
-    let peerConnection = peerConnections[uuid]
+    // let peerConnection = peerConnections[uuid]
     // 添加音视频流
     cameraStream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, cameraStream)
+        peerConnections[uuid].addTrack(track, cameraStream)
         console.log('add track: ', track.kind)
     })
 
     screenStream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, screenStream)
+        peerConnections[uuid].addTrack(track, screenStream)
         console.log(track.kind)
     })
 }
@@ -246,11 +250,11 @@ async function getCameraStream() {
         document.getElementById('cameraStream').srcObject = cameraStream
         document.getElementById('cameraStream').play()
 
-        // // 获取之后进行监测
-        // cameraStream.oninactive = async () => {
-        //     console.log('camera inactive')
-        //     getCameraStream()
-        // }
+        // 获取之后进行监测
+        cameraStream.oninactive = async () => {
+            console.log('camera inactive')
+            getCameraStream()
+        }
 
         id2content['camera'] = cameraStream.id
 
@@ -346,12 +350,12 @@ async function getScreenStream() {
 }
 
 const createAnswer = async (uuid, offer) => {
-    let peerConnection = peerConnections[uuid]
-    await createPeerConnection()
-    await peerConnection.setRemoteDescription(offer)
+    // let peerConnection = peerConnections[uuid]
+    await createPeerConnection(uuid)
+    await peerConnections[uuid].setRemoteDescription(offer)
 
-    let answer = await peerConnection.createAnswer()
-    await peerConnection.setLocalDescription(answer)
+    let answer = await peerConnections[uuid].createAnswer()
+    await peerConnections[uuid].setLocalDescription(answer)
 
     const json = JSON.stringify({
         'action': 'answer',
@@ -365,11 +369,11 @@ const createAnswer = async (uuid, offer) => {
 }
 
 const addAnswer = async (uuid, answer) => {
-    let peerConnection = peerConnections[uuid]
+    // let peerConnection = peerConnections[uuid]
     // 当前如果没有远程连接，则开始建立连接
-    if (!peerConnection.currentRemoteDescription) {
+    if (!peerConnections[uuid].currentRemoteDescription) {
         try {
-            await peerConnection.setRemoteDescription(answer)
+            await peerConnections[uuid].setRemoteDescription(answer)
             console.log('set remote description finish')
         } catch (err) {
             console.error('setRemoteDescription error: ' + err)
