@@ -88,59 +88,98 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 			}
 		}()
 
-		switch track.Kind() {
-		case webrtc.RTPCodecTypeAudio:
-			go saveToDisk(saver_camera, conn_data, track)
-			go saveToDisk(saver_screen, conn_data, track)
-		case webrtc.RTPCodecTypeVideo:
-			if track.StreamID() == conn_data.stream_id.camera {
-				log.Println("ONTRACK-CAMERA")
-				go saveToDisk(saver_camera, conn_data, track)
-			}
-			if track.StreamID() == conn_data.stream_id.screen {
-				log.Println("ONTRACK-SCREEN")
-				go saveToDisk(saver_screen, conn_data, track)
+		for {
+			rtpPacket, _, err := track.ReadRTP()
+			switch track.Kind() {
+			case webrtc.RTPCodecTypeAudio:
+				if err != nil {
+					if err != io.EOF {
+						log.Println(err)
+					}
+					if saver_screen.audioWriter != nil {
+						if err := saver_screen.audioWriter.Close(); err != nil {
+							log.Print(err)
+						}
+					}
+					if saver_camera.audioWriter != nil {
+						if err := saver_camera.audioWriter.Close(); err != nil {
+							log.Print(err)
+						}
+					}
+					break
+				}
+				saver_screen.PushOpus(rtpPacket)
+				saver_camera.PushOpus(rtpPacket)
+			case webrtc.RTPCodecTypeVideo:
+				if track.StreamID() == conn_data.stream_id.camera {
+					if err != nil {
+						if err != io.EOF {
+							log.Println(err)
+						}
+						if saver_camera.videoWriter != nil {
+							if err := saver_camera.videoWriter.Close(); err != nil {
+								log.Print(err)
+							}
+						}
+						break
+					}
+					saver_camera.PushVP8(rtpPacket)
+				}
+				if track.StreamID() == conn_data.stream_id.screen {
+					if err != nil {
+						if err != io.EOF {
+							log.Println(err)
+						}
+						if saver_screen.videoWriter != nil {
+							if err := saver_screen.videoWriter.Close(); err != nil {
+								log.Print(err)
+							}
+						}
+						break
+					}
+					saver_screen.PushVP8(rtpPacket)
+				}
 			}
 		}
 	})
 	return peerConnection
 }
-func saveToDisk(saver *webmSaver, conn_data *ConnData, track *webrtc.TrackRemote) {
-	for {
-		rtpPacket, _, err := track.ReadRTP()
-		if err != nil {
-			if err != io.EOF {
-				log.Println(err)
-				break
-			}
-		}
-		// 不加这个会panic
-		if rtpPacket == nil {
-			break
-		}
-		switch track.Kind() {
-		case webrtc.RTPCodecTypeAudio:
-			saver.PushOpus(rtpPacket)
-		case webrtc.RTPCodecTypeVideo:
-			saver.PushVP8(rtpPacket)
-		}
-	}
-	switch track.Kind() {
-	case webrtc.RTPCodecTypeAudio:
-		if saver.audioWriter != nil {
-			if err := saver.audioWriter.Close(); err != nil {
-				log.Print(err)
-			}
-		}
-	case webrtc.RTPCodecTypeVideo:
-		if saver.videoWriter != nil {
-			if err := saver.videoWriter.Close(); err != nil {
-				log.Print(err)
-			}
-		}
-	}
 
-}
+// func saveToDisk(saver *webmSaver, conn_data *ConnData, track *webrtc.TrackRemote) {
+// 	for {
+// 		// 不加这个会panic
+// 		if err != nil {
+// 			if err != io.EOF {
+// 				log.Println(err)
+// 				break
+// 			}
+// 		}
+// 		if rtpPacket == nil {
+// 			break
+// 		}
+// 		switch track.Kind() {
+// 		case webrtc.RTPCodecTypeAudio:
+// 			saver.PushOpus(rtpPacket)
+// 		case webrtc.RTPCodecTypeVideo:
+// 			saver.PushVP8(rtpPacket)
+// 		}
+// 	}
+// 	switch track.Kind() {
+// 	case webrtc.RTPCodecTypeAudio:
+// 		if saver.audioWriter != nil {
+// 			if err := saver.audioWriter.Close(); err != nil {
+// 				log.Print(err)
+// 			}
+// 		}
+// 	case webrtc.RTPCodecTypeVideo:
+// 		if saver.videoWriter != nil {
+// 			if err := saver.videoWriter.Close(); err != nil {
+// 				log.Print(err)
+// 			}
+// 		}
+// 	}
+
+// }
 func connectionAnswer(
 	peerConnection *webrtc.PeerConnection,
 	offer webrtc.SessionDescription,
