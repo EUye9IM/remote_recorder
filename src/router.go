@@ -28,7 +28,7 @@ func init() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	token_maker.Set("0123456789abcdef", 10)
+	token_maker.Set("0123456789abcdef", 32)
 	Users_info = make(map[string]Uinfo)
 
 	engin = gin.New()

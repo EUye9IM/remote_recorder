@@ -6,7 +6,7 @@ debug = true
 #路径
 path = "webrtc.db3"
 # 初始化数据库
-initial = false
+initial = true
 # 账号
 [[database.account]]
 no="1234567"
@@ -28,7 +28,7 @@ no="0"
 name = "张张"
 password = "00"
 level = "0"
-enable = "0"
+enable = "1"
 
 # 监考测试
 [[database.account]]
@@ -36,7 +36,7 @@ no="1"
 name = "监控"
 password = "00"
 level = "1"
-enable = "0"
+enable = "1"
 
 # 密码
 [password]
