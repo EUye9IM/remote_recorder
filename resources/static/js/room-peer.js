@@ -69,8 +69,8 @@ const initWebSocket = (url) => {
     }
     ws.onclose = event => {
         console.log('Websocket closed.')
-        alert('connection close, may be repeat login')
-        window.location = '/login'
+        alert('与服务端失去连接，请直接关闭标签页')
+        // window.location = '/login'
     }
 }
 
@@ -123,10 +123,10 @@ const handleEvent = async (data) => {
     console.log(data)
     if (data.event === 'MemberJoined') {
         console.log('member joined.')
-        handleMemberJoined(data.no, data.name, data.stu_level)
+        handleMemberJoined(data.no, data.name, data.level)
     }
     if (data.event === 'MemberLeft') {
-        handleMemberLeft(data.no, data.name, data.stu_level)
+        handleMemberLeft(data.no, data.name, data.level)
     }
     if (data.event === 'SendStreamId') {
         // 获取stream id
@@ -207,6 +207,7 @@ async function getCameraStream() {
     try {
         cameraStream = await navigator.mediaDevices.getUserMedia(mediaStreamConstrains)
         document.getElementById('cameraStream').srcObject = cameraStream
+        document.getElementById('cameraStream').play()
 
         // 获取之后进行监测
         cameraStream.oninactive = async () => {
@@ -265,6 +266,7 @@ async function getScreenStream() {
         } while (displaySurface !== 'monitor')
 
         document.getElementById('screenStream').srcObject = screenStream
+        document.getElementById('screenStream').play()
 
         // 获取之后进行监测
         screenStream.oninactive = async () => {

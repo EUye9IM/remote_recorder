@@ -8,7 +8,7 @@ const getAndUpdateMembers = async () => {
         updateMemberTotal(members.length)
         // 显示参会者成员信息
         for (let i = 0; members.length > i; i++) {
-            addMemberToDom(members[i].no, members[i].name)
+            addMemberToDom(members[i].no, members[i].name, members[i].stu_level)
         }
         // 将 student 添加到 select 选项中
         members.forEach( member => {
@@ -19,12 +19,13 @@ const getAndUpdateMembers = async () => {
 }
 
 // 添加用户信息到左侧用户栏
-let addMemberToDom = async (MemberId, name) => {
+let addMemberToDom = async (MemberId, name, level) => {
     let membersWrapper = document.getElementById('member__list')
     let memberItem = `<div class="member__wrapper" id="member__${MemberId}__wrapper">
                         <span class="green__icon"></span>
                         <p class="member_name">${MemberId} </p>
                         <p class="member_name">${name}</p>
+                        <p class="member_name">level = ${level}</p>
                     </div>`
     membersWrapper.insertAdjacentHTML('beforeend', memberItem)
 }
@@ -38,7 +39,7 @@ let updateMemberTotal = async (MemberCount) => {
 // 成员加入房间
 let handleMemberJoined = async (MemberId, name, level) => {
     console.log('A new member has joined the room:', MemberId)
-    addMemberToDom(MemberId, name)
+    addMemberToDom(MemberId, name, level)
 
     let members = await getMembers()
     updateMemberTotal(members.length)
