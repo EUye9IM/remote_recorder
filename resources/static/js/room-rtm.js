@@ -104,6 +104,28 @@ let addBotMessageToDom = (botMessage) => {
     }
 }
 
+const joinStream = async () => {
+    document.getElementById('join-btn').style.display = 'none'
+    document.getElementsByClassName('stream__actions')[0].style.display = 'flex'
+
+    // localTracks = await AgoraRTC.createMicrophoneAndCameraTracks({}, {encoderConfig:{
+    //     width:{min:640, ideal:1920, max:1920},
+    //     height:{min:480, ideal:1080, max:1080}
+    // }})
+
+
+    let player = `<div class="video__container" id="user-container-${uid}">
+                    <div class="video-player" id="user-${uid}"></div>
+                 </div>`
+
+    document.getElementById('streams__container').insertAdjacentHTML('beforeend', player)
+    document.getElementById(`user-container-${uid}`).addEventListener('click', expandVideoFrame)
+
+    localTracks[1].play(`user-${uid}`)
+    await client.publish([localTracks[0], localTracks[1]])
+
+}
+
 // 获取到当前在会的所有成员信息，需要来自服务端
 const getMembers = async () => {
     // post请求获取信息
