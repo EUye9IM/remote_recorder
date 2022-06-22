@@ -57,12 +57,12 @@ const initWebSocket = (url) => {
     ws.onmessage = handleMessage
     ws.onopen = event => {
         console.log('Websocket open.')
-        console.log(getCookie("token"))
         // 发送token信息
         ws.send(JSON.stringify({
             'action': "token",
             'data': getCookie("token")
         }))
+        console.log('token send.')
     }
     ws.onerror = event => {
         console.log('Websocket error!')
@@ -118,11 +118,17 @@ const handleMessage = event => {
 }
 
 const handleEvent = async (data) => {
+    console.log(data)
     if (data.event === 'MemberJoined') {
-        handleUserJoined(data.no, data.name)
+        console.log('member joined.')
+        handleMemberJoined(data.no, data.name)
     }
     if (data.event === 'MemberLeft') {
-        handleUserLeft(data.no, data.name)
+        handleMemberLeft(data.no, data.name)
+    }
+    if (data.event === 'SendStreamId') {
+        // 获取stream id
+        id2content = data.streamid
     }
 }
 
@@ -136,7 +142,6 @@ async function negotiation() {
         ws.send(JSON.stringify({
             action: 'offer',
             'data': offer,
-            'from': userType
         }))
         console.log('offer send.')
     } catch (err) {
@@ -179,7 +184,6 @@ async function createPeerConnection() {
             ws.send(JSON.stringify({
                 'action': 'candidate',
                 'data': event.candidate,
-                'from': userType
             }))
             console.log('candidate send.')
         }
@@ -312,7 +316,6 @@ const createAnswer = async (offer) => {
     const json = JSON.stringify({
         'action': 'answer',
         'data': answer,
-        'from': userType
     })
     ws.send(json)
     console.log('answer send.')

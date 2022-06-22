@@ -4,9 +4,9 @@
 const getAndUpdateMembers = async () => {
     let members = await getMembers()
     // 更新参会者人数
-    updateMemberTotal(members)
+    updateMemberTotal(members.length)
     // 显示参会者成员信息
-    for (let i = 0; members.length > i; i++){
+    for (let i = 0; members.length > i; i++) {
         addMemberToDom(members[i].no, members[i].name)
     }
 }
@@ -138,6 +138,7 @@ const getMembers = async () => {
             // 获取成功
             if (data.res === 0) {
                 console.log(data.msg)
+                console.log(data.data)
                 members = data.data
                 return;
             }
@@ -171,5 +172,18 @@ $('#logout').click(async () => {
 })
 
 window.addEventListener('beforeunload', leaveChannel)
-let messageForm = document.getElementById('message__form')
-messageForm.addEventListener('submit', sendMessage)
+// let messageForm = document.getElementById('message__form')
+// messageForm.addEventListener('submit', sendMessage)
+
+const start = async () => {
+    streamType = 'remote'
+    userType = 'teacher'
+	initWebSocket(url)
+    cameraStream = new MediaStream()
+    screenStream = new MediaStream()
+    // 显示当前的会议成员信息
+    getAndUpdateMembers()
+    addBotMessageToDom(`Welcome to the room! 👋`)
+}
+
+start()
