@@ -2,13 +2,16 @@
 
 // 获取到当前在会的所有成员信息，将其显示
 const getAndUpdateMembers = async () => {
-    let members = await getMembers()
-    // 更新参会者人数
-    updateMemberTotal(members.length)
-    // 显示参会者成员信息
-    for (let i = 0; members.length > i; i++) {
-        addMemberToDom(members[i].no, members[i].name)
-    }
+    waitForSocketConnection(ws, async () => {
+        let members = await getMembers()
+        console.log(members)
+        // 更新参会者人数
+        updateMemberTotal(members.length)
+        // 显示参会者成员信息
+        for (let i = 0; members.length > i; i++) {
+            addMemberToDom(members[i].no, members[i].name)
+        }
+    })
 }
 
 // 添加用户信息到左侧用户栏
@@ -16,6 +19,7 @@ let addMemberToDom = async (MemberId, name) => {
     let membersWrapper = document.getElementById('member__list')
     let memberItem = `<div class="member__wrapper" id="member__${MemberId}__wrapper">
                         <span class="green__icon"></span>
+                        <p class="member_name">${MemberId} </p>
                         <p class="member_name">${name}</p>
                     </div>`
     membersWrapper.insertAdjacentHTML('beforeend', memberItem)
@@ -30,7 +34,7 @@ let updateMemberTotal = async (MemberCount) => {
 // 成员加入房间
 let handleMemberJoined = async (MemberId, name) => {
     console.log('A new member has joined the room:', MemberId)
-    addMemberToDom(MemberId)
+    addMemberToDom(MemberId, name)
 
     let members = await getMembers()
     updateMemberTotal(members.length)
@@ -50,8 +54,8 @@ let handleMemberLeft = async (MemberId, name) => {
 // 成员离开，刷新左侧列表
 let removeMemberFromDom = async (MemberId) => {
     let memberWrapper = document.getElementById(`member__${MemberId}__wrapper`)
-    let name = memberWrapper.getElementsByClassName('member_name')[0].textContent
-    addBotMessageToDom(`${name} 离开.`)
+    let name = memberWrapper.getElementsByClassName('member_name')[1].textContent
+    addBotMessageToDom(`${MemberId} ${name} 离开.`)
     
     memberWrapper.remove()
 }
@@ -81,42 +85,13 @@ let handleChannelMessage = async (messageData, MemberId) => {
 }
 
 
-// 发送信息，目前还需要完善
-// let sendMessage = async (e) => {
-//     e.preventDefault()
-
-//     let message = e.target.message.value
-//     channel.sendMessage({text:JSON.stringify({'type':'chat', 'message':message, 'displayName':displayName})})
-//     addMessageToDom(displayName, message)
-//     e.target.reset()
-// }
-
-// let addMessageToDom = (name, message) => {
-//     let messagesWrapper = document.getElementById('messages')
-
-//     let newMessage = `<div class="message__wrapper">
-//                         <div class="message__body">
-//                             <strong class="message__author">${name}</strong>
-//                             <p class="message__text">${message}</p>
-//                         </div>
-//                     </div>`
-
-//     messagesWrapper.insertAdjacentHTML('beforeend', newMessage)
-
-//     let lastMessage = document.querySelector('#messages .message__wrapper:last-child')
-//     if(lastMessage){
-//         lastMessage.scrollIntoView()
-//     }
-// }
-
-
 // 添加Bot信息（即通知信息）
 let addBotMessageToDom = (botMessage) => {
     let messagesWrapper = document.getElementById('messages')
 
     let newMessage = `<div class="message__wrapper">
                         <div class="message__body__bot">
-                            <strong class="message__author__bot">🤖 Mumble Bot</strong>
+                            <strong class="message__author__bot">🤖 Webrtc Bot</strong>
                             <p class="message__text__bot">${botMessage}</p>
                         </div>
                     </div>`
