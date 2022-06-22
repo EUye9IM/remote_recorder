@@ -19,13 +19,16 @@ var upgrader = websocket.Upgrader{
 }
 
 type ConnData struct {
-	wsconn    *websocket.Conn
-	uinfo     Uinfo
-	joined    bool
-	stream_id struct {
+	wsconn        *websocket.Conn
+	uinfo         Uinfo
+	joined        bool
+	stu_stream_id struct {
 		screen string
 		camera string
 	}
+	// stu_tracks struct {
+	// 	track *webrtc.TrackRemote,
+	// }
 	close sync.Mutex
 }
 
@@ -132,14 +135,18 @@ func WebsocketServer(c *gin.Context) {
 				if userdata.uinfo.Level != "1" {
 					continue
 				}
+				if peerConnection != nil {
+					peerConnection.Close()
+					peerConnection = nil
+				}
 
 				stu_no := js.Data["no"]
 				s_id := ""
 				c_id := ""
 				for i := range conn_set {
 					if i.uinfo.No == stu_no {
-						s_id = i.stream_id.screen
-						c_id = i.stream_id.camera
+						s_id = i.stu_stream_id.screen
+						c_id = i.stu_stream_id.camera
 					}
 				}
 				updata := map[string]interface{}{
@@ -152,6 +159,16 @@ func WebsocketServer(c *gin.Context) {
 				sendEvent(ws, updata)
 
 				// TODO send offer
+				peerConnection = newRemoteConnection(ws, userdata)
+
+				offer := webrtc.SessionDescription{}
+				//send answer back
+				upload := map[string]interface{}{
+					"action": "offer",
+					"data":   offer,
+				}
+				ws.WriteJSON(upload)
+				log.Println("Websocket write: offer")
 
 				continue
 			}
@@ -177,8 +194,8 @@ func WebsocketServer(c *gin.Context) {
 				continue
 			}
 
-			userdata.stream_id.screen = js.Data.Screen
-			userdata.stream_id.camera = js.Data.Camera
+			userdata.stu_stream_id.screen = js.Data.Screen
+			userdata.stu_stream_id.camera = js.Data.Camera
 
 			continue
 		}
