@@ -69,6 +69,8 @@ const initWebSocket = (url) => {
     }
     ws.onclose = event => {
         console.log('Websocket closed.')
+        alert('connection close, may be repeat login')
+        window.location = '/login'
     }
 }
 
