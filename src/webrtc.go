@@ -95,11 +95,11 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 		case webrtc.RTPCodecTypeVideo:
 			if track.StreamID() == conn_data.stream_id.camera {
 				log.Println("ONTRACK-CAMERA")
-				saveToDisk(saver_camera, conn_data, track)
+				go saveToDisk(saver_camera, conn_data, track)
 			}
 			if track.StreamID() == conn_data.stream_id.screen {
 				log.Println("ONTRACK-SCREEN")
-				saveToDisk(saver_screen, conn_data, track)
+				go saveToDisk(saver_screen, conn_data, track)
 			}
 		}
 	})
