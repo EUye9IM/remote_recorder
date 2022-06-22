@@ -119,7 +119,6 @@ github.com/pion/rtcp
 ## explicit; go 1.13
 github.com/pion/rtp
 github.com/pion/rtp/codecs
-github.com/pion/rtp/pkg/frame
 github.com/pion/rtp/pkg/obu
 # github.com/pion/sctp v1.8.2
 ## explicit; go 1.13
@@ -159,8 +158,6 @@ github.com/pion/webrtc/v3/internal/fmtp
 github.com/pion/webrtc/v3/internal/mux
 github.com/pion/webrtc/v3/internal/util
 github.com/pion/webrtc/v3/pkg/media
-github.com/pion/webrtc/v3/pkg/media/ivfwriter
-github.com/pion/webrtc/v3/pkg/media/oggwriter
 github.com/pion/webrtc/v3/pkg/media/samplebuilder
 github.com/pion/webrtc/v3/pkg/rtcerr
 # github.com/ugorji/go/codec v1.2.7
