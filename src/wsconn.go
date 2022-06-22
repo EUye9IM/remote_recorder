@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -26,12 +27,14 @@ type ConnData struct {
 		screen string
 		camera string
 	}
+	close sync.Mutex
 }
 
 var conn_set = make(map[*ConnData]bool)
 
 func WebsocketServer(c *gin.Context) {
 	userdata := new(ConnData)
+	userdata.close.Lock()
 	userdata.joined = false
 	log.Println("Websocket Connect")
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -47,6 +50,7 @@ func WebsocketServer(c *gin.Context) {
 			"event": "MemberLeft",
 			"no":    userdata.uinfo.No,
 			"name":  userdata.uinfo.Name,
+			"level": userdata.uinfo.Level,
 		}
 		boardcastEvent("1", nil, updata)
 	}()
@@ -61,6 +65,7 @@ func WebsocketServer(c *gin.Context) {
 		if peerConnection == nil {
 			return
 		}
+		userdata.close.Unlock()
 		if cErr := peerConnection.Close(); cErr != nil {
 			log.Panicln("cannot close peerConnection: %v\n" + cErr.Error())
 		}
@@ -99,6 +104,7 @@ func WebsocketServer(c *gin.Context) {
 				"event": "MemberJoined",
 				"no":    userdata.uinfo.No,
 				"name":  userdata.uinfo.Name,
+				"level": userdata.uinfo.Level,
 			}
 			boardcastEvent("1", ws, updata)
 			continue
@@ -197,7 +203,6 @@ func WebsocketServer(c *gin.Context) {
 			candidate := js.Data
 			if err == nil {
 				peerConnection.AddICECandidate(candidate)
-				log.Println("Add ice candidate: " + string(content))
 			} else {
 				logUnknown(string(content))
 			}
