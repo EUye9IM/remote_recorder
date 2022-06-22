@@ -8,6 +8,7 @@ let switchCameraAudio = document.getElementById('switchCameraAudio')
 let switchScreen = document.getElementById('switchScreen')
 let switchScreenAudio = document.getElementById('switchScreenAudio')
 
+let serveruuid = guuid(); // 与服务端保持连接的uuid
 btnSystem.onclick = async () => {
     btnSystem.disabled = true
     
@@ -36,9 +37,8 @@ btnSystem.onclick = async () => {
         await ws.send(JSON.stringify({
             'action': 'streamid',
             'data': id2content,
-            'from': userType
         }))
-        await negotiation()
+        await negotiation(serveruuid)
     })
 
 }
@@ -100,7 +100,7 @@ const start = () => {
     streamType = 'local'
     userType = 'student'
 	initWebSocket(url)
-    createPeerConnection()
+    createPeerConnection(serveruuid)
 }
 
 start()

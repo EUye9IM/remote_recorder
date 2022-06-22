@@ -66,7 +66,7 @@ const initWebSocket = (url) => {
         // 发送token信息
         ws.send(JSON.stringify({
             'action': "token",
-            'data': getCookie("token")
+            'data': getCookie("token"),
         }))
         console.log('token send.')
     }
@@ -114,21 +114,21 @@ const handleMessage = event => {
     const data = message.data.data
 
     if (message.action === 'offer') {
-        createAnswer(peerConnections[uuid], data)
+        createAnswer(uuid, data)
     }
 
     if (message.action === 'answer') {
-        addAnswer(peerConnections[uuid], data)
+        addAnswer(uuid, data)
     }
 
     if (message.action === 'candidate') {
-        AddIceCandidate(peerConnections[uuid], data)
+        AddIceCandidate(uuid, data)
     }
 }
 
-const AddIceCandidate = (peerConnection, candidate) => {
-    if (peerConnection) {
-        peerConnection.addIceCandidate(candidate)
+const AddIceCandidate = (uuid, candidate) => {
+    if (peerConnections[uuid]) {
+        peerConnections[uuid].addIceCandidate(candidate)
     }
 }
 
@@ -150,7 +150,8 @@ const handleEvent = async (data) => {
 }
 
 // 完成 sdp 交换过程，必须在 addtrack 后调用
-async function negotiation(peerConnection, uuid) {
+async function negotiation(uuid) {
+    let peerConnection = peerConnections[uuid]
     try {
         let offer = await peerConnection.createOffer()
         await peerConnection.setLocalDescription(offer)
@@ -170,8 +171,9 @@ async function negotiation(peerConnection, uuid) {
 }
 
 
-async function createPeerConnection(peerConnection) {
-    peerConnection = new RTCPeerConnection(servers)
+async function createPeerConnection(uuid) {
+    let peerConnection = new RTCPeerConnection(servers)
+    peerConnections[uuid] = peerConnection
 
     peerConnection.ontrack = event => {
         console.log("track event", event)
@@ -203,7 +205,10 @@ async function createPeerConnection(peerConnection) {
             // 发送 candidate 信息
             ws.send(JSON.stringify({
                 'action': 'candidate',
-                'data': event.candidate,
+                'data': {
+                    'data': event.candidate,
+                    'uuid': uuid
+                }
             }))
             console.log('candidate send.')
         }
@@ -221,7 +226,8 @@ const getStream = async () => {
 }
 
 // 为一个peerConnection添加流
-async function streamAddTrack(peerConnection) {
+async function streamAddTrack(uuid) {
+    let peerConnection = peerConnections[uuid]
     // 添加音视频流
     cameraStream.getTracks().forEach(track => {
         peerConnection.addTrack(track, cameraStream)
@@ -232,7 +238,6 @@ async function streamAddTrack(peerConnection) {
         peerConnection.addTrack(track, screenStream)
         console.log(track.kind)
     })
-
 }
 
 async function getCameraStream() {
@@ -340,7 +345,8 @@ async function getScreenStream() {
 
 }
 
-const createAnswer = async (peerConnection, offer) => {
+const createAnswer = async (uuid, offer) => {
+    let peerConnection = peerConnections[uuid]
     await createPeerConnection()
     await peerConnection.setRemoteDescription(offer)
 
@@ -349,13 +355,17 @@ const createAnswer = async (peerConnection, offer) => {
 
     const json = JSON.stringify({
         'action': 'answer',
-        'data': answer,
+        'data': {
+            'data': answer,
+            'uuid': uuid
+        }
     })
     ws.send(json)
     console.log('answer send.')
 }
 
-const addAnswer = async (peerConnection, answer) => {
+const addAnswer = async (uuid, answer) => {
+    let peerConnection = peerConnections[uuid]
     // 当前如果没有远程连接，则开始建立连接
     if (!peerConnection.currentRemoteDescription) {
         try {
@@ -370,7 +380,13 @@ const addAnswer = async (peerConnection, answer) => {
 
 let leaveChannel = async () => {
     // 关闭连接
-    peerConnection.close()
+    // peerConnections.forEach(peerConnection => {
+    //     peerConnection.close()
+    // })
+    for (uuid in peerConnections) {
+        peerConnections[uuid].close()
+    }
+    
     console.log("RTCPeerConnection closed!")
 }
 
