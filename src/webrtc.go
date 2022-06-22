@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"time"
 
@@ -53,7 +54,6 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 			"data":   i,
 		}
 		ws.WriteJSON(upload)
-		log.Println("Websocket write: candidate")
 	})
 
 	peerConnection.OnConnectionStateChange(func(s webrtc.PeerConnectionState) {
@@ -104,7 +104,6 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 			for range ticker.C {
 				errSend := peerConnection.WriteRTCP([]rtcp.Packet{&rtcp.PictureLossIndication{MediaSSRC: uint32(track.SSRC())}})
 				if errSend != nil {
-					log.Println(errSend)
 					return
 				}
 			}
@@ -124,7 +123,9 @@ func saveToDisk(i media.Writer, track *webrtc.TrackRemote) {
 	for {
 		rtpPacket, _, err := track.ReadRTP()
 		if err != nil {
-			log.Println(err)
+			if err != io.EOF {
+				log.Println(err)
+			}
 			break
 		}
 		if err := i.WriteRTP(rtpPacket); err != nil {
