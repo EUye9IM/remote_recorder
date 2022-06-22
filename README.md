@@ -150,6 +150,7 @@ data: {
 	event: MemberJoined
 	no: 学号
 	name: 姓名
+	stu_level: 0/1
 }
 
 用户离开
@@ -158,6 +159,7 @@ data: {
 	event: MemberLeft
 	no: 学号
 	name: 姓名
+	stu_level: 0/1
 }
 
 监考端查看
