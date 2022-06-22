@@ -121,10 +121,10 @@ const handleEvent = async (data) => {
     console.log(data)
     if (data.event === 'MemberJoined') {
         console.log('member joined.')
-        handleMemberJoined(data.no, data.name)
+        handleMemberJoined(data.no, data.name, data.stu_level)
     }
     if (data.event === 'MemberLeft') {
-        handleMemberLeft(data.no, data.name)
+        handleMemberLeft(data.no, data.name, data.stu_level)
     }
     if (data.event === 'SendStreamId') {
         // 获取stream id

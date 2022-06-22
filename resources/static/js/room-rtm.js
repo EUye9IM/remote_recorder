@@ -4,13 +4,17 @@
 const getAndUpdateMembers = async () => {
     waitForSocketConnection(ws, async () => {
         let members = await getMembers()
-        console.log(members)
         // 更新参会者人数
         updateMemberTotal(members.length)
         // 显示参会者成员信息
         for (let i = 0; members.length > i; i++) {
             addMemberToDom(members[i].no, members[i].name)
         }
+        // 将 student 添加到 select 选项中
+        members.forEach( member => {
+            if (member.stu_level == 0)
+                $('#Select__Members').append($('<option>').val(`${member.no}`).text(`${member.no} ${member.name}`))
+        })
     })
 }
 
@@ -32,7 +36,7 @@ let updateMemberTotal = async (MemberCount) => {
 }
 
 // 成员加入房间
-let handleMemberJoined = async (MemberId, name) => {
+let handleMemberJoined = async (MemberId, name, level) => {
     console.log('A new member has joined the room:', MemberId)
     addMemberToDom(MemberId, name)
 
@@ -41,6 +45,10 @@ let handleMemberJoined = async (MemberId, name) => {
 
     // 信息栏显示通知
     addBotMessageToDom(`欢迎 ${MemberId} ${name} 加入房间`)
+
+    // 加入option选项
+    if (level == 0)
+        $('#Select__Members').append($('<option>').val(`${MemberId}`).text(`${MemberId} ${name}`))
 }
  
 let handleMemberLeft = async (MemberId, name) => {
@@ -49,6 +57,13 @@ let handleMemberLeft = async (MemberId, name) => {
     MemberCount = Number($("strong").html()) - 1
     
     updateMemberTotal(MemberCount)
+    $('#Select__Members option').each(function() {
+        if ( $(this).val() == `${MemberId}` ) {
+            $(this).remove();
+            // 移除一个即可
+            return
+        }
+    });
 }
 
 // 成员离开，刷新左侧列表
@@ -105,29 +120,29 @@ let addBotMessageToDom = (botMessage) => {
 }
 
 const joinStream = async () => {
-    document.getElementById('join-btn').style.display = 'none'
-    document.getElementsByClassName('stream__actions')[0].style.display = 'flex'
 
-    // localTracks = await AgoraRTC.createMicrophoneAndCameraTracks({}, {encoderConfig:{
-    //     width:{min:640, ideal:1920, max:1920},
-    //     height:{min:480, ideal:1080, max:1080}
-    // }})
+    // 需要获取远程某位考生的信息
+    MemberId = $("#Select__Members option:selected").val()
+    console.log(`get ${MemberId} stream`)
+    await ws.send(JSON.stringify({
+        'action': 'event',
+        'data': {
+            'event': 'GetMemberStream',
+            'no': MemberId
+        }
+    }))
 
+    // 接下来可以获取到远程的发来的streamid
 
-    let player = `<div class="video__container" id="user-container-${uid}">
-                    <div class="video-player" id="user-${uid}"></div>
-                 </div>`
-
-    document.getElementById('streams__container').insertAdjacentHTML('beforeend', player)
-    document.getElementById(`user-container-${uid}`).addEventListener('click', expandVideoFrame)
-
-    localTracks[1].play(`user-${uid}`)
-    await client.publish([localTracks[0], localTracks[1]])
-
+    // cameraStream = await navigator.mediaDevices.getUserMedia(mediaStreamConstrains)
+    // screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
+    // document.getElementById('cameraStream').srcObject = cameraStream
+    // document.getElementById('screenStream').srcObject = screenStream
 }
 
 // 获取到当前在会的所有成员信息，需要来自服务端
 const getMembers = async () => {
+    let members;
     // post请求获取信息
     await $.post(
         '/api/getmembers',
@@ -145,7 +160,6 @@ const getMembers = async () => {
             }
         }
     )
-
     return members
 }
 
@@ -168,6 +182,15 @@ $('#logout').click(async () => {
     )
 })
 
+// 查看视频流开关
+$('#join-stream-btn').click(async event => {
+    await event.preventDefault()
+    console.log("click join-btn")
+    
+    // await getStream()
+    joinStream()
+})
+
 window.addEventListener('beforeunload', leaveChannel)
 // let messageForm = document.getElementById('message__form')
 // messageForm.addEventListener('submit', sendMessage)
@@ -176,8 +199,11 @@ const start = async () => {
     streamType = 'remote'
     userType = 'teacher'
 	initWebSocket(url)
+
+    // 存储两种流
     cameraStream = new MediaStream()
     screenStream = new MediaStream()
+    
     // 显示当前的会议成员信息
     getAndUpdateMembers()
     addBotMessageToDom(`Welcome to the room! 👋`)
