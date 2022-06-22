@@ -13,7 +13,7 @@ import (
 	"github.com/pion/webrtc/v3/pkg/media/oggwriter"
 )
 
-func newConnection(ws *websocket.Conn) *webrtc.PeerConnection {
+func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnection {
 
 	// Create a MediaEngine object to configure the supported codec
 	m := &webrtc.MediaEngine{}
@@ -80,15 +80,21 @@ func newConnection(ws *websocket.Conn) *webrtc.PeerConnection {
 		track *webrtc.TrackRemote,
 		receiver *webrtc.RTPReceiver,
 	) {
-		log.Printf("%v\n", track.StreamID())
 		var file media.Writer
+		class := track.StreamID()
+		if track.StreamID() == conn_data.stream_id.camera {
+			class = "camera"
+		}
+		if track.StreamID() == conn_data.stream_id.screen {
+			class = "screen"
+		}
 		if track.Kind() == webrtc.RTPCodecTypeAudio {
-			file, err = oggwriter.New(track.StreamID()+".ogg", 48000, 2)
+			file, err = oggwriter.New(conn_data.uinfo.No+"_"+conn_data.uinfo.Name+"_"+class+"_"+GetTime()+".ogg", 48000, 2)
 			if err != nil {
 				log.Panicln(err)
 			}
 		} else if track.Kind() == webrtc.RTPCodecTypeVideo {
-			file, err = ivfwriter.New(track.StreamID() + ".ivf")
+			file, err = ivfwriter.New(conn_data.uinfo.No + "_" + conn_data.uinfo.Name + "_" + class + "_" + GetTime() + ".ivf")
 			if err != nil {
 				log.Panicln(err)
 			}
