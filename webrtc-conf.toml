@@ -37,6 +37,15 @@ password = "9999999"
 level = "1"
 enable = "1"
 
+# 监考测试
+[[database.account]]
+no="1"
+name = "监控"
+password = "1"
+level = "1"
+enable = "0"
+
+
 # 应用
 [app]
 # 端口 http:80 https:443

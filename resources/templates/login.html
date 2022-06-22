@@ -77,10 +77,11 @@
                     password: password
                 },
                 data => {
+                    console.log(data)
                     const res = data.res
                     // 验证成功，登录考试系统
                     if (res === 0) {
-                        $(location).attr('href', '/index')
+                        pageJump()
                         return
                     }
                     // 需要更改密码 
@@ -99,6 +100,26 @@
                 }
             )
         })
+        function pageJump() {
+            $.post(
+                '/api/uinfo', 
+                data => {
+                    if (data.res === 0) {
+                        // 监考端跳转
+                        if (data.data.level == 1) {
+                            window.location = '/remote'
+                        } else {
+                            window.location = '/index'
+                        }
+                    } else if (data.res === 1) {
+                        // 此处逻辑有点重复，但不影响
+                        window.location = '/passchange'
+                    } else {
+                        window.location = '/login'
+                    }
+                }
+            )
+        }
 
     });
 </script>

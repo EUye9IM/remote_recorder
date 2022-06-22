@@ -83,6 +83,26 @@ webrtc的信令服务需要自己实现，将采用websocket实现。
 	- res: 0/-1 成功/失败
 	- msg: 提示信息
 
+=======================================
+新添加内容
+
+### 获取所有参会人员信息
+此请求只可以来自监考端，学生端返回失败信息
+
+- POST
+- `/api/getmembers`
+- return
+	- res: 0/-1 成功/失败
+	- msg: 提示信息
+	- data: [
+		{
+			- no: 学号
+			- name: 姓名
+			- stu_enable: 0/1 
+		},
+		...
+	]
+
 ## 路由
 
 由于改成模板渲染，现在可以设定路由了。
@@ -94,6 +114,44 @@ webrtc的信令服务需要自己实现，将采用websocket实现。
 现在的路由是这样：
 
 ![route.png](readme_img/route.png)
+
+
+## websocket信令信息约定
+下面约定一些websocket的信息，方便通信以及事件处理
+
+### stream id 
+学生端在开启摄像头和共享时的流的id，(2022/6/22日，似乎不需要摄像头流了)
+
+```
+学生端发送，服务端存储，一方面用于流录制，另一方面在监考端查看学生时发送
+action: streamid
+data: {
+	screen: id,
+	camera: id
+}
+```
+
+### 事件
+下面是部分事件信息：
+
+```
+用户加入
+action: event
+data: {
+	event: MemberJoined
+	no: 学号
+	name: 姓名
+}
+
+用户离开
+action: event
+data: {
+	event: MemberLeft
+	no: 学号
+	name: 姓名
+}
+
+```
 
 
 ## 监考端相关设计

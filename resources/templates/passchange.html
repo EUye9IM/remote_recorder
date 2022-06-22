@@ -112,6 +112,8 @@
                     // 改密成功
                     if (data.res === 0) {
                         alert('改密成功，请重新登录！！！')
+                        sessionStorage.removeItem('user')
+                        sessionStorage.removeItem('password')
                         $(location).attr('href', '/login')
                         return
                     }

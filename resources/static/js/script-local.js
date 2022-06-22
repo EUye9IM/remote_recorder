@@ -1,21 +1,6 @@
 /********************************
  * 设置按钮的事件等配置
  */
-
-// 拦截直接输入url的非法访问
-if (document.referrer === '') {
-    alert('非法访问页面，请先登录！！！')
-    window.location = '/login'
-}
-
-const userId = sessionStorage.getItem('userId')
-if (userId === null) {
-    window.location = '/login'
-}
-
-// $('#userId').attr('placeholder', userId)
-
-
 // 下面处理按钮事件
 let btnSystem = document.getElementById('btnSystem')
 let switchCamera = document.getElementById('switchCamera')
@@ -93,3 +78,35 @@ switchScreenAudio.onchange = async () => {
 }
 
 
+// 退出登录
+$('#logout').click(async () => {
+    $.post(
+        '/api/logout',
+        data => {
+            if (data.res === 0) {
+                console.log('退出登录')
+                $(location).attr('href', '/login')
+                return;
+            }
+            if (data.res === -1) {
+                alert('退出登录失败')
+                return;
+            }
+        }
+    )
+})
+
+
+// 拦截直接输入url的非法访问
+// 更换非法访问的判断方式，通过token判断
+// if (document.referrer === '') {
+//     alert('非法访问页面，请先登录！！！')
+//     window.location = '/login'
+// }
+
+// const userId = sessionStorage.getItem('userId')
+// if (userId === null) {
+//     window.location = '/login'
+// }
+
+// $('#userId').attr('placeholder', userId)

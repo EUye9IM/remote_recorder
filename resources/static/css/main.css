@@ -34,6 +34,15 @@
     gap: 1em;
 }
 
+#logout-controls{
+    position: fixed;
+    bottom: 10%;
+    left: 50%;
+    transform:translateX(-50%);
+    display: flex;
+    gap: 1em;
+}
+
 .control-container{
   background-color: rgb(179, 102, 249, .9);
   padding: 20px;

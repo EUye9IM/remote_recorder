@@ -12,7 +12,6 @@ let userType;
 
 let id2content  = {};
 
-
 const isSec = window.location.protocol == "https:";
 const host = window.location.host;
 let url;
@@ -44,16 +43,6 @@ const mediaStreamConstrains = {
     },
     audio: true
 }
-
-// const offerOptions = { // mandatory: { 
-//     //     OfferToReceiveAudio: true, 
-//     //     OfferToReceiveVideo: true
-//     // },
-//     offerToReceiveAudio: true,
-//     offerToReceiveVideo: true,
-//     // offerToSendAudio: true,
-//     // offerToSendVideo: true
-// }
 
 const initWebSocket = (url) => {
     ws = new WebSocket(url)
@@ -97,6 +86,7 @@ const handleMessage = event => {
 
     if (message.action === 'event') {
         // 事件处理
+        handleEvent(message.data)
     }
 
     if (message.action === 'streamid') {
@@ -119,9 +109,13 @@ const handleMessage = event => {
     }
 }
 
-const handleUserJoined = async (MemberId) => {
-    console.log('A new user joined the channel: ', MemberId)
-    createOffer()
+const handleEvent = async (data) => {
+    if (data.event === 'MemberJoined') {
+        handleUserJoined(data.no, data.name)
+    }
+    if (data.event === 'MemberLeft') {
+        handleUserLeft(data.no, data.name)
+    }
 }
 
 // 完成 sdp 交换过程，必须在 addtrack 后调用
@@ -340,10 +334,12 @@ let leaveChannel = async () => {
     // 关闭连接
     peerConnection.close()
     console.log("RTCPeerConnection closed!")
+    // 移除用户登录信息
+    sessionStorage.removeItem("user")
 }
 
 window.addEventListener('beforeunload', leaveChannel)
-window.onunload = () => {
-    peerConnection.close()
-    console.log('broswer refresh')
-}
+// window.onunload = () => {
+//     peerConnection.close()
+//     console.log('broswer refresh')
+// }

@@ -1,79 +1,58 @@
 // 监考系统的界面显示配置
 
-// 获取到当前在会的所有成员信息，需要来自服务端
-const getMembers = async () => {
-    let members = [
-        {
-            no: '1234567',
-            name: '张三',
-            stu_enable: 0
-        }
-    ]
-    return members
-}
-
-const getUserAttributesByKeys = async (MemberId) => {
-    const user = {
-        no: '1234567',
-        name: '张三',
-        stu_enable: 0
-    }
-    return user 
-}
-
 // 获取到当前在会的所有成员信息，将其显示
 const getAndUpdateMembers = async () => {
     let members = await getMembers()
     // 更新参会者人数
     updateMemberTotal(members)
+    // 显示参会者成员信息
     for (let i = 0; members.length > i; i++){
-        addMemberToDom(members[i])
+        addMemberToDom(members[i].no, members[i].name)
     }
 }
 
-// 成员加入房间
-let handleMemberJoined = async (MemberId) => {
-    console.log('A new member has joined the room:', MemberId)
-    addMemberToDom(MemberId)
-
-    let members = await getMembers()
-    updateMemberTotal(members)
-
-    let {name} = await getUserAttributesByKeys(MemberId)
-    
-    // 信息栏显示通知
-    addBotMessageToDom(`欢迎 ${name} 加入房间`)
-}
-
-let addMemberToDom = async (MemberId) => {
-    let {name} = await getUserAttributesByKeys(MemberId)
-
+// 添加用户信息到左侧用户栏
+let addMemberToDom = async (MemberId, name) => {
     let membersWrapper = document.getElementById('member__list')
     let memberItem = `<div class="member__wrapper" id="member__${MemberId}__wrapper">
                         <span class="green__icon"></span>
                         <p class="member_name">${name}</p>
                     </div>`
-
     membersWrapper.insertAdjacentHTML('beforeend', memberItem)
 }
 
-let updateMemberTotal = async (members) => {
+// 显示参会者人数的信息
+let updateMemberTotal = async (MemberCount) => {
     let total = document.getElementById('members__count')
-    total.innerText = members.length
+    total.innerText = MemberCount
 }
- 
-let handleMemberLeft = async (MemberId) => {
-    removeMemberFromDom(MemberId)
+
+// 成员加入房间
+let handleMemberJoined = async (MemberId, name) => {
+    console.log('A new member has joined the room:', MemberId)
+    addMemberToDom(MemberId)
 
     let members = await getMembers()
-    updateMemberTotal(members)
+    updateMemberTotal(members.length)
+
+    // 信息栏显示通知
+    addBotMessageToDom(`欢迎 ${MemberId} ${name} 加入房间`)
+}
+ 
+let handleMemberLeft = async (MemberId, name) => {
+    removeMemberFromDom(MemberId)
+    // 成员数减 1
+    MemberCount = Number($("strong").html()) - 1
+    
+    updateMemberTotal(MemberCount)
 }
 
+// 成员离开，刷新左侧列表
 let removeMemberFromDom = async (MemberId) => {
     let memberWrapper = document.getElementById(`member__${MemberId}__wrapper`)
     let name = memberWrapper.getElementsByClassName('member_name')[0].textContent
     addBotMessageToDom(`${name} 离开.`)
-        
+    
     memberWrapper.remove()
 }
 
@@ -131,6 +110,7 @@ let addMessageToDom = (name, message) => {
 }
 
 
+// 添加Bot信息（即通知信息）
 let addBotMessageToDom = (botMessage) => {
     let messagesWrapper = document.getElementById('messages')
 
@@ -149,10 +129,40 @@ let addBotMessageToDom = (botMessage) => {
     }
 }
 
+// 获取到当前在会的所有成员信息，需要来自服务端
+const getMembers = async () => {
+    let members = [
+        {
+            no: '1234567',
+            name: '张三',
+            stu_enable: 0
+        }
+    ]
+    // post请求获取信息
+    await $.post(
+        '/api/getmembers',
+        data => {
+            // 获取成功
+            if (data.res === 0) {
+                console.log(data.msg)
+                members = data.data
+                return;
+            }
+            if (data.res === -1) {
+                alert(data.msg)
+                return;
+            }
+        }
+    )
+
+    return members
+}
+
 let leaveChannel = async () => {
     await channel.leave()
     await rtmClient.logout()
 }
+
 
 window.addEventListener('beforeunload', leaveChannel)
 let messageForm = document.getElementById('message__form')
