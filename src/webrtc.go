@@ -66,11 +66,13 @@ func WebsocketServer(c *gin.Context) {
 			continue
 		}
 		// TODO change action name
-		if js.Action == "init" {
+		if js.Action == "streamid" {
 			var js struct {
 				Action string `json:"action"`
 				Data   struct {
-					Token string `json:"token"`
+					// Token string `json:"token"`
+					Screen string `json:"screen"`
+					Camera string `json:"camera"`
 				} `json:"data"`
 			}
 			err = json.Unmarshal(content, &js)
@@ -78,7 +80,7 @@ func WebsocketServer(c *gin.Context) {
 				log.Print(err)
 				continue
 			}
-			data.uinfo = Users_info[js.Data.Token]
+			// data.uinfo = Users_info[js.Data.Token]
 			continue
 		}
 		if js.Action == "offer" {
@@ -134,7 +136,7 @@ func newConnection(ws *websocket.Conn) *webrtc.PeerConnection {
 	// Setup the codecs you want to use.
 	// We'll use a H264 and Opus but you can also define your own
 	if err := m.RegisterCodec(webrtc.RTPCodecParameters{
-		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264, ClockRate: 90000, Channels: 0, SDPFmtpLine: "", RTCPFeedback: nil},
+		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeVP8, ClockRate: 90000, Channels: 0, SDPFmtpLine: "", RTCPFeedback: nil},
 		PayloadType:        96,
 	}, webrtc.RTPCodecTypeVideo); err != nil {
 		log.Panicln(err)
