@@ -7,8 +7,9 @@ import (
 )
 
 var config struct {
-	Debug    bool
-	Database struct {
+	Debug     bool
+	Save_path string
+	Database  struct {
 		Path    string
 		Initial bool
 		Account []struct {

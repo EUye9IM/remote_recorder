@@ -1,6 +1,7 @@
 # 调试模式
 debug = true
 
+save_path = "./save"
 # 数据库
 [database]
 #路径
