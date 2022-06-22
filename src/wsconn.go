@@ -10,23 +10,28 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
-// TODO 保存连接至用户名而不是id
+// TODO 保存连接至用户名而不是streamid
+// TODO 监控端发送offer
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
 }
 
-type conn_data struct {
-	wsconn *websocket.Conn
-	uinfo  Uinfo
-	joined bool
+type ConnData struct {
+	wsconn    *websocket.Conn
+	uinfo     Uinfo
+	joined    bool
+	stream_id struct {
+		screen string
+		camera string
+	}
 }
 
-var conn_set = make(map[*conn_data]bool)
+var conn_set = make(map[*ConnData]bool)
 
 func WebsocketServer(c *gin.Context) {
-	userdata := new(conn_data)
+	userdata := new(ConnData)
 	userdata.joined = false
 	log.Println("Websocket Connect")
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -43,7 +48,7 @@ func WebsocketServer(c *gin.Context) {
 			"no":    userdata.uinfo.No,
 			"name":  userdata.uinfo.Name,
 		}
-		boardcastEvent("1", updata)
+		boardcastEvent("1", nil, updata)
 	}()
 	defer log.Println("Websocket Close")
 	conn_set[userdata] = true
@@ -51,8 +56,11 @@ func WebsocketServer(c *gin.Context) {
 
 	userdata.wsconn = ws
 
-	peerConnection := newConnection(ws)
+	var peerConnection *webrtc.PeerConnection
 	defer func() {
+		if peerConnection == nil {
+			return
+		}
 		if cErr := peerConnection.Close(); cErr != nil {
 			log.Panicln("cannot close peerConnection: %v\n" + cErr.Error())
 		}
@@ -92,11 +100,14 @@ func WebsocketServer(c *gin.Context) {
 				"no":    userdata.uinfo.No,
 				"name":  userdata.uinfo.Name,
 			}
-			boardcastEvent("1", updata)
+			boardcastEvent("1", ws, updata)
 			continue
 		}
 
 		if js.Action == "event" {
+			if !userdata.joined {
+				continue
+			}
 			var js struct {
 				Action string                 `json:"action"`
 				Data   map[string]interface{} `json:"data"`
@@ -106,17 +117,48 @@ func WebsocketServer(c *gin.Context) {
 				log.Print(err)
 				continue
 			}
-			if userdata.uinfo.Level != "1" {
-				continue
-			}
 			if js.Data["event"] == "GetMemberStream" {
+				if userdata.uinfo.Level != "1" {
+					continue
+				}
 				log.Print("WS: event GetMemberStream:", js.Data["no"])
 				continue
 			}
 			continue
 		}
+		if js.Action == "streamid" {
+			if !userdata.joined {
+				continue
+			}
+			if userdata.uinfo.Level != "0" {
+				continue
+			}
+			var js struct {
+				Action string `json:"action"`
+				Data   struct {
+					Screen string `json:"screen"`
+					Camera string `json:"camera"`
+				} `json:"data"`
+			}
+			err = json.Unmarshal(content, &js)
+			if err != nil {
+				log.Print(err)
+				continue
+			}
+
+			userdata.stream_id.screen = js.Data.Screen
+			userdata.stream_id.camera = js.Data.Camera
+
+			continue
+		}
 
 		if js.Action == "offer" {
+			if !userdata.joined {
+				continue
+			}
+			if userdata.uinfo.Level != "0" {
+				continue
+			}
 			var js struct {
 				Action string                    `json:"action"`
 				Data   webrtc.SessionDescription `json:"data"`
@@ -125,6 +167,7 @@ func WebsocketServer(c *gin.Context) {
 			offer := js.Data
 			if err == nil && offer.Type == webrtc.SDPTypeOffer {
 				log.Println("receive offer: " + offer.SDP)
+				peerConnection = newConnection(ws, userdata)
 
 				answer := connectionAnswer(peerConnection, offer)
 				//send answer back
@@ -140,6 +183,12 @@ func WebsocketServer(c *gin.Context) {
 			continue
 		}
 		if js.Action == "candidate" {
+			if !userdata.joined {
+				continue
+			}
+			if userdata.uinfo.Level != "0" {
+				continue
+			}
 			var js struct {
 				Action string                  `json:"action"`
 				Data   webrtc.ICECandidateInit `json:"data"`
@@ -161,13 +210,13 @@ func logUnknown(content string) {
 	log.Println("Websocket Read unknown: " + string(content))
 }
 
-func boardcastEvent(level string, data map[string]interface{}) {
+func boardcastEvent(level string, exc *websocket.Conn, data map[string]interface{}) {
 	upload := map[string]interface{}{
 		"action": "event",
 		"data":   data,
 	}
 	for k := range conn_set {
-		if k.uinfo.Level == level {
+		if k.uinfo.Level == level && k.wsconn != exc {
 			k.wsconn.WriteJSON(upload)
 		}
 	}
