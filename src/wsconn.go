@@ -11,7 +11,6 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
-// TODO 保存连接至用户名而不是streamid
 // TODO 监控端发送offer
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -134,6 +133,26 @@ func WebsocketServer(c *gin.Context) {
 					continue
 				}
 
+				stu_no := js.Data["no"]
+				s_id := ""
+				c_id := ""
+				for i := range conn_set {
+					if i.uinfo.No == stu_no {
+						s_id = i.stream_id.screen
+						c_id = i.stream_id.camera
+					}
+				}
+				updata := map[string]interface{}{
+					"event": "SendStreamId",
+					"streamid": map[string]interface{}{
+						"screen": s_id,
+						"camera": c_id,
+					},
+				}
+				sendEvent(ws, updata)
+
+				// TODO send offer
+
 				continue
 			}
 			continue
@@ -171,6 +190,10 @@ func WebsocketServer(c *gin.Context) {
 			if userdata.uinfo.Level != "0" {
 				continue
 			}
+			if peerConnection != nil {
+				peerConnection.Close()
+				peerConnection = nil
+			}
 			var js struct {
 				Action string                    `json:"action"`
 				Data   webrtc.SessionDescription `json:"data"`
@@ -197,7 +220,10 @@ func WebsocketServer(c *gin.Context) {
 			if !userdata.joined {
 				continue
 			}
-			if userdata.uinfo.Level != "0" {
+			// if userdata.uinfo.Level != "0" {
+			// 	continue
+			// }
+			if peerConnection == nil {
 				continue
 			}
 			var js struct {
@@ -230,4 +256,11 @@ func boardcastEvent(level string, exc *websocket.Conn, data map[string]interface
 			k.wsconn.WriteJSON(upload)
 		}
 	}
+}
+func sendEvent(to *websocket.Conn, data map[string]interface{}) {
+	upload := map[string]interface{}{
+		"action": "event",
+		"data":   data,
+	}
+	k.to.WriteJSON(upload)
 }
