@@ -2,11 +2,6 @@
 ## explicit; go 1.16
 github.com/BurntSushi/toml
 github.com/BurntSushi/toml/internal
-# github.com/at-wat/ebml-go v0.16.0
-## explicit; go 1.11
-github.com/at-wat/ebml-go
-github.com/at-wat/ebml-go/mkvcore
-github.com/at-wat/ebml-go/webm
 # github.com/gin-contrib/sse v0.1.0
 ## explicit; go 1.12
 github.com/gin-contrib/sse
@@ -161,7 +156,6 @@ github.com/pion/webrtc/v3/internal/util
 github.com/pion/webrtc/v3/pkg/media
 github.com/pion/webrtc/v3/pkg/media/ivfwriter
 github.com/pion/webrtc/v3/pkg/media/oggwriter
-github.com/pion/webrtc/v3/pkg/media/samplebuilder
 github.com/pion/webrtc/v3/pkg/rtcerr
 # github.com/ugorji/go/codec v1.2.7
 ## explicit; go 1.11
