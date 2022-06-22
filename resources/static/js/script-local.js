@@ -32,7 +32,7 @@ btnSystem.onclick = async () => {
     }
 
     waitForSocketConnection(ws, async () => {
-        await getStream(streamType)
+        await getStream()
         await ws.send(JSON.stringify({
             'action': 'streamid',
             'data': id2content,
@@ -95,18 +95,3 @@ $('#logout').click(async () => {
         }
     )
 })
-
-
-// 拦截直接输入url的非法访问
-// 更换非法访问的判断方式，通过token判断
-// if (document.referrer === '') {
-//     alert('非法访问页面，请先登录！！！')
-//     window.location = '/login'
-// }
-
-// const userId = sessionStorage.getItem('userId')
-// if (userId === null) {
-//     window.location = '/login'
-// }
-
-// $('#userId').attr('placeholder', userId)

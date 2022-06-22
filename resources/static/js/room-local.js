@@ -3,11 +3,6 @@ const start = () => {
     userType = 'student'
 	initWebSocket(url)
     createPeerConnection()
-
-    // waitForSocketConnection(ws, () => {
-    //     createOffer()
-    // })
-
 }
 
 start()

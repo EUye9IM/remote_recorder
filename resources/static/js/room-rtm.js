@@ -131,13 +131,6 @@ let addBotMessageToDom = (botMessage) => {
 
 // 获取到当前在会的所有成员信息，需要来自服务端
 const getMembers = async () => {
-    let members = [
-        {
-            no: '1234567',
-            name: '张三',
-            stu_enable: 0
-        }
-    ]
     // post请求获取信息
     await $.post(
         '/api/getmembers',
@@ -158,11 +151,24 @@ const getMembers = async () => {
     return members
 }
 
-let leaveChannel = async () => {
-    await channel.leave()
-    await rtmClient.logout()
-}
 
+// 退出登录
+$('#logout').click(async () => {
+    $.post(
+        '/api/logout',
+        data => {
+            if (data.res === 0) {
+                console.log('退出登录')
+                $(location).attr('href', '/login')
+                return;
+            }
+            if (data.res === -1) {
+                alert('退出登录失败')
+                return;
+            }
+        }
+    )
+})
 
 window.addEventListener('beforeunload', leaveChannel)
 let messageForm = document.getElementById('message__form')

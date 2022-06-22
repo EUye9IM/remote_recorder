@@ -1,3 +1,5 @@
+// 监考端 webrtc 部分处理
+
 
 let uid = sessionStorage.getItem('uid')
 if(!uid){

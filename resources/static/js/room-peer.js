@@ -50,6 +50,11 @@ const initWebSocket = (url) => {
     ws.onmessage = handleMessage
     ws.onopen = event => {
         console.log('Websocket open.')
+        // 发送token信息
+        ws.send(JSON.stringify({
+            'action': token,
+            'data': document.cookie["token"]
+        }))
     }
     ws.onerror = event => {
         console.log('Websocket error!')
@@ -78,9 +83,9 @@ async function waitForSocketConnection(socket, callback) {
 const handleMessage = event => {
     const message = JSON.parse(event.data)
     // console.log('message from ' + message.from)
-    if (message.from === userType) {
-        return
-    }
+    // if (message.from === userType) {
+    //     return
+    // }
     console.log(message)
     console.log(`recieve ${message.action} from ${message.from}.`)
 
@@ -178,22 +183,14 @@ async function createPeerConnection() {
     }
 }
 
-const getStream = async (__streamType) => {
-    if (__streamType === 'local') {
-        if (!cameraStream) {
-            await getCameraStream()
-        }
-
-        if (!screenStream) {
-            await getScreenStream()
-        }
-        // await getLocalStream()
-    }
-    if (__streamType === 'remote') {
-        cameraStream = new MediaStream()
-        screenStream = new MediaStream()
+const getStream = async () => {
+    if (!cameraStream) {
+        await getCameraStream()
     }
 
+    if (!screenStream) {
+        await getScreenStream()
+    }
 }
 
 
@@ -339,7 +336,3 @@ let leaveChannel = async () => {
 }
 
 window.addEventListener('beforeunload', leaveChannel)
-// window.onunload = () => {
-//     peerConnection.close()
-//     console.log('broswer refresh')
-// }

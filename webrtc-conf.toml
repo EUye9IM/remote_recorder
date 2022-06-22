@@ -11,7 +11,7 @@ initial = true
 [[database.account]]
 no="1234567"
 name = "张三"
-password = "1234567"
+password = "1"
 level = "0"
 enable = "1"
 
@@ -31,20 +31,11 @@ digital = 1
 other = 1
 
 [[database.account]]
-no="9999999"
-name = "监控"
-password = "9999999"
-level = "1"
-enable = "1"
-
-# 监考测试
-[[database.account]]
-no="1"
+no="9"
 name = "监控"
 password = "1"
 level = "1"
-enable = "0"
-
+enable = "1"
 
 # 应用
 [app]

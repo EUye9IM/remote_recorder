@@ -103,6 +103,7 @@ webrtc的信令服务需要自己实现，将采用websocket实现。
 		...
 	]
 
+
 ## 路由
 
 由于改成模板渲染，现在可以设定路由了。
@@ -118,6 +119,14 @@ webrtc的信令服务需要自己实现，将采用websocket实现。
 
 ## websocket信令信息约定
 下面约定一些websocket的信息，方便通信以及事件处理
+
+### token
+第一次连接后发送token
+
+```
+action: token
+data: token字符串
+```
 
 ### stream id 
 学生端在开启摄像头和共享时的流的id，(2022/6/22日，似乎不需要摄像头流了)
@@ -151,32 +160,27 @@ data: {
 	name: 姓名
 }
 
-```
+监考端查看
+首先监考端通过websocket发送数据至服务端
 
+action: event
+data: {
+	event: GetMemberStream
+	no: 需要获取的学生的学号
+}
 
-## 监考端相关设计
-### 有新成员加入
-如果有新成员加入，页面需要局部刷新，此部分使用信令服务器事件触发实现，发送的json如下：
-```json
-{
-	"type": "event",
-	"data": {
-		"event": "MemberJoined",
-		"memberid": memberid,
+服务端收到后，发送对应学生的流的id，注意：此信息只发送给之前的监考端
+action: event
+data: {
+	event: SendStreamId 
+	streamid: {
+		screen: id,
+		camera: id
 	}
 }
+
+信息发送完成之后，服务端开始与指定监考端创建peerConnection，并将流转发
+createOffer...
+
 ```
-这条数据是要求服务端发送给所有监考老师端，并不发送给学生端
 
-因为监考端需要获取到某一个成员的信息，故考虑使用get/post请求，如下所示：
-- POST
-- `/api/search_by_id`
-	- userid: 学号
-- return
-	- res: 0/-1 成功/失败
-	- name: 名字
-	- stu_enable: 0/1 
-
-
-### 存储在会人员信息
-因为监考端需要实时显示在会人员的信息，所以考虑使用get/post从服务端获取到信息，需要获取的信息有：
