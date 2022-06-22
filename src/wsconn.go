@@ -61,6 +61,7 @@ func WebsocketServer(c *gin.Context) {
 	userdata.wsconn = ws
 
 	var peerConnection *webrtc.PeerConnection
+	peerConnection = nil
 	defer func() {
 		if peerConnection == nil {
 			return
@@ -96,9 +97,14 @@ func WebsocketServer(c *gin.Context) {
 				log.Print(err)
 				continue
 			}
-			userdata.uinfo = Users_info[js.Data]
-			log.Println("Websocket token: ", js.Data)
+			for i := range conn_set {
+				if i.uinfo.No == Users_info[js.Data].No {
+					return
+				}
+			}
 
+			log.Println("Websocket token: ", js.Data)
+			userdata.uinfo = Users_info[js.Data]
 			userdata.joined = true
 			updata := map[string]interface{}{
 				"event": "MemberJoined",
@@ -127,7 +133,7 @@ func WebsocketServer(c *gin.Context) {
 				if userdata.uinfo.Level != "1" {
 					continue
 				}
-				log.Print("WS: event GetMemberStream:", js.Data["no"])
+
 				continue
 			}
 			continue
@@ -172,7 +178,6 @@ func WebsocketServer(c *gin.Context) {
 			err = json.Unmarshal(content, &js)
 			offer := js.Data
 			if err == nil && offer.Type == webrtc.SDPTypeOffer {
-				log.Println("receive offer: " + offer.SDP)
 				peerConnection = newConnection(ws, userdata)
 
 				answer := connectionAnswer(peerConnection, offer)
