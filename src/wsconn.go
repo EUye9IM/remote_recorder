@@ -29,10 +29,16 @@ type ConnData struct {
 	// stu_tracks struct {
 	// 	track *webrtc.TrackRemote,
 	// }
+	uuid  string
 	close sync.Mutex
+}
+type ConnDataPair struct {
+	s *ConnData
+	t *ConnData
 }
 
 var conn_set = make(map[*ConnData]bool)
+var uuid_map = make(map[string]ConnDataPair)
 
 func WebsocketServer(c *gin.Context) {
 	userdata := new(ConnData)
@@ -68,6 +74,9 @@ func WebsocketServer(c *gin.Context) {
 		if peerConnection == nil {
 			return
 		}
+		if userdata.uuid == "" {
+			delete(uuid_map, userdata.uuid)
+		}
 		userdata.close.Unlock()
 		if cErr := peerConnection.Close(); cErr != nil {
 			log.Panicln("cannot close peerConnection: %v\n" + cErr.Error())
@@ -80,16 +89,13 @@ func WebsocketServer(c *gin.Context) {
 			log.Println("Websocket Read Error: " + err.Error())
 			break
 		}
-		var js struct {
-			Action string      `json:"action"`
-			Data   interface{} `json:"data"`
-		}
+		var js map[string]interface{}
 		err = json.Unmarshal(content, &js)
 		if err != nil {
 			log.Println("receive not json: " + string(content))
 			continue
 		}
-		if js.Action == "token" {
+		if js["action"] == "token" {
 			var js struct {
 				Action string `json:"action"`
 				Data   string `json:"data"`
@@ -118,7 +124,7 @@ func WebsocketServer(c *gin.Context) {
 			continue
 		}
 
-		if js.Action == "event" {
+		if js["action"] == "event" {
 			if !userdata.joined {
 				continue
 			}
@@ -143,38 +149,31 @@ func WebsocketServer(c *gin.Context) {
 				stu_no := js.Data["no"]
 				s_id := ""
 				c_id := ""
+				var sconn *ConnData
 				for i := range conn_set {
 					if i.uinfo.No == stu_no {
 						s_id = i.stu_stream_id.screen
 						c_id = i.stu_stream_id.camera
 					}
+					sconn = i
 				}
+				uuid := GetTmpID()
 				updata := map[string]interface{}{
 					"event": "SendStreamId",
 					"streamid": map[string]interface{}{
 						"screen": s_id,
 						"camera": c_id,
 					},
+					"uuid": uuid,
 				}
 				sendEvent(ws, updata)
-
-				// TODO send offer
-				// peerConnection = newRemoteConnection(ws, userdata)
-
-				// offer := webrtc.SessionDescription{}
-				// //send answer back
-				// upload := map[string]interface{}{
-				// 	"action": "offer",
-				// 	"data":   offer,
-				// }
-				// ws.WriteJSON(upload)
-				log.Println("Websocket write: offer")
+				uuid_map[uuid] = ConnDataPair{s: sconn, t: userdata}
 
 				continue
 			}
 			continue
 		}
-		if js.Action == "streamid" {
+		if js["action"] == "streamid" {
 			if !userdata.joined {
 				continue
 			}
@@ -187,6 +186,7 @@ func WebsocketServer(c *gin.Context) {
 					Screen string `json:"screen"`
 					Camera string `json:"camera"`
 				} `json:"data"`
+				Uuid string `json:"uuid"`
 			}
 			err = json.Unmarshal(content, &js)
 			if err != nil {
@@ -196,11 +196,14 @@ func WebsocketServer(c *gin.Context) {
 
 			userdata.stu_stream_id.screen = js.Data.Screen
 			userdata.stu_stream_id.camera = js.Data.Camera
+			// uuid=serveruuid
+			uuid_map[js.Uuid] = ConnDataPair{s: userdata, t: nil}
+			userdata.uuid = js.Uuid
 
 			continue
 		}
 
-		if js.Action == "offer" {
+		if js["action"] == "offer" {
 			if !userdata.joined {
 				continue
 			}
@@ -214,26 +217,34 @@ func WebsocketServer(c *gin.Context) {
 			var js struct {
 				Action string                    `json:"action"`
 				Data   webrtc.SessionDescription `json:"data"`
+				Uuid   string                    `json:"uuid"`
 			}
 			err = json.Unmarshal(content, &js)
 			offer := js.Data
+			// check uuid=serveruuid
 			if err == nil && offer.Type == webrtc.SDPTypeOffer {
-				peerConnection = newConnection(ws, userdata)
+				if uuid_map[js.Uuid].t == nil {
+					peerConnection = newConnection(ws, userdata)
 
-				answer := connectionAnswer(peerConnection, offer)
-				//send answer back
-				upload := map[string]interface{}{
-					"action": "answer",
-					"data":   answer,
+					answer := connectionAnswer(peerConnection, offer)
+					//send answer back
+					upload := map[string]interface{}{
+						"action": "answer",
+						"data":   answer,
+					}
+					ws.WriteJSON(upload)
+					log.Println("Websocket write: answer")
+				} else {
+					if uuid_map[js.Uuid].s != nil {
+						uuid_map[js.Uuid].s.wsconn.WriteJSON(js)
+					}
 				}
-				ws.WriteJSON(upload)
-				log.Println("Websocket write: answer")
 			} else {
 				logUnknown(string(content))
 			}
 			continue
 		}
-		if js.Action == "candidate" {
+		if js["action"] == "candidate" {
 			if !userdata.joined {
 				continue
 			}
@@ -246,11 +257,60 @@ func WebsocketServer(c *gin.Context) {
 			var js struct {
 				Action string                  `json:"action"`
 				Data   webrtc.ICECandidateInit `json:"data"`
+				Uuid   string                  `json:"uuid"`
 			}
 			err = json.Unmarshal(content, &js)
+			//  check uuid=serveruuid
 			candidate := js.Data
 			if err == nil {
-				peerConnection.AddICECandidate(candidate)
+				if uuid_map[js.Uuid].t == nil {
+					peerConnection.AddICECandidate(candidate)
+				} else {
+					if uuid_map[js.Uuid].s != nil && uuid_map[js.Uuid].t == userdata {
+						uuid_map[js.Uuid].s.wsconn.WriteJSON(js)
+						continue
+					}
+					if uuid_map[js.Uuid].t != nil && uuid_map[js.Uuid].s == userdata {
+						uuid_map[js.Uuid].t.wsconn.WriteJSON(js)
+						continue
+					}
+				}
+			} else {
+				logUnknown(string(content))
+			}
+			continue
+		}
+		if js["action"] == "answer" {
+			if !userdata.joined {
+				continue
+			}
+			if userdata.uinfo.Level != "1" {
+				continue
+			}
+			if peerConnection == nil {
+				continue
+			}
+			var js struct {
+				Action string                  `json:"action"`
+				Data   webrtc.ICECandidateInit `json:"data"`
+				Uuid   string                  `json:"uuid"`
+			}
+			err = json.Unmarshal(content, &js)
+			// check uuid=serveruuid
+			candidate := js.Data
+			if err == nil {
+				if uuid_map[js.Uuid].t == nil {
+					peerConnection.AddICECandidate(candidate)
+				} else {
+					if uuid_map[js.Uuid].s != nil && uuid_map[js.Uuid].t == userdata {
+						uuid_map[js.Uuid].s.wsconn.WriteJSON(js)
+						continue
+					}
+					if uuid_map[js.Uuid].t != nil && uuid_map[js.Uuid].s == userdata {
+						uuid_map[js.Uuid].t.wsconn.WriteJSON(js)
+						continue
+					}
+				}
 			} else {
 				logUnknown(string(content))
 			}

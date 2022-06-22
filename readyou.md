@@ -45,13 +45,27 @@ data: {
 | streamid  | `{action: "streamid", data:{screen:..., camera:...}, uuid:serveruuid }` | 客户S   | 处理，记录serveruuid，随后将会收到连接offer        |
 | offer     | `{action: "offer", data:{data: ..., uuid: uuid} }`                      | 客户S   | 处理/转发，处理uuid=serveruuid的情况，其余转发对端 |
 | candidate | `{action: "candidate", data:{data: ..., uuid: uuid} }`                  | 客户S/T | 处理/转发，处理uuid=serveruuid的情况，其余转发对端 |
-| answer    | `{action: "answer",  data:{data: ..., uuid: uuid} }`                    | 客户T   | 处理/转发，处理uuid=serveruuid的情况，其余转发对端 |
+| answer    | `{action: "answer",  data:{data: ..., uuid: uuid} }`                    | 客户T   | 转发                                               |
 
 ### 服务端发
-| Action    | 结构                                                 | 发起方     |
-| --------- | ---------------------------------------------------- | ---------- |
-| answer    | `{action: "answer", data: ...}`                      | 服务       |
-| answer    | `{action: "answer", data:{data: ..., uuid: uuid}}`   | 服务(转发) |
-| candidate | `{action: "candidate", data: ...}`                   | 服务       |
-| candidate | `{action: "candidate",data:{data: ..., uuid: uuid}}` | 服务(转发) |
-| offer     | `{action: "offer", data:{data: ..., uuid: uuid} }`   | 服务(转发) |
+| Action    | 结构                                                                       | 接受方     |
+| --------- | -------------------------------------------------------------------------- | ---------- |
+| answer    | `{action: "answer", data: ...}`                                            | S          |
+| answer    | `{action: "answer", data:{data: ..., uuid: uuid}}`                         | S(转发自T) |
+| event     | `{action: "event", data:{event: SendStreamId,streamid: ... , uuid: uuid}}` | T          |
+| candidate | `{action: "candidate", data: ...}`                                         | S          |
+| candidate | `{action: "candidate",data:{data: ..., uuid: uuid}}`                       | S(转发自T) |
+| offer     | `{action: "offer", data:{data: ..., uuid: uuid} }`                         | 服务(转发) |
+
+
+<!-- ### 监控查看时序
+
+```
+        S                        服务器                         T
+                                    <-- event:GetMemberStream --|       
+                                   |----event:SendStreamId----->         服务器编一个uuid -->
+
+
+
+
+```
