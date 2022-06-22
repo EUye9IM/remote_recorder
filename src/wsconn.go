@@ -279,5 +279,5 @@ func sendEvent(to *websocket.Conn, data map[string]interface{}) {
 		"action": "event",
 		"data":   data,
 	}
-	k.to.WriteJSON(upload)
+	to.WriteJSON(upload)
 }
