@@ -8,6 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//TODO cookiedomain
+const COOKIE_DOMAIN = ""
+
 var (
 	token_maker RandStringMaker
 	Users_info  map[string]Uinfo
@@ -25,7 +28,7 @@ func handleLogin(c *gin.Context) {
 	token, err := c.Cookie("token")
 	if err == nil {
 		delete(Users_info, token)
-		c.SetCookie("token", "", -1, "/", "/", config.App.Https, false)
+		c.SetCookie("token", "", -1, "/", COOKIE_DOMAIN, config.App.Https, false)
 		log.Println("Delete token", token)
 	}
 
@@ -62,7 +65,7 @@ func handleLogin(c *gin.Context) {
 		Users_info[token] = uinfo
 		break
 	}
-	c.SetCookie("token", token, 0, "/", "/", config.App.Https, false)
+	c.SetCookie("token", token, 0, "/", COOKIE_DOMAIN, config.App.Https, false)
 	log.Println("Add token", token)
 	if user == pw {
 		c.JSON(http.StatusOK, gin.H{
@@ -88,7 +91,7 @@ func handleLogout(c *gin.Context) {
 	}
 	_, ok := Users_info[token]
 	if !ok {
-		c.SetCookie("token", "", -1, "/", "/", config.App.Https, false)
+		c.SetCookie("token", "", -1, "/", COOKIE_DOMAIN, config.App.Https, false)
 		c.JSON(http.StatusOK, gin.H{
 			"res": -1,
 			"msg": "无效cookie，请重新登录",
@@ -96,7 +99,7 @@ func handleLogout(c *gin.Context) {
 		return
 	}
 	delete(Users_info, token)
-	c.SetCookie("token", "", -1, "/", "/", config.App.Https, false)
+	c.SetCookie("token", "", -1, "/", COOKIE_DOMAIN, config.App.Https, false)
 	log.Println("Delete token", token)
 	c.JSON(http.StatusOK, gin.H{
 		"res": 0,
@@ -115,7 +118,7 @@ func handleUinfo(c *gin.Context) {
 	}
 	uinfo, ok := Users_info[token]
 	if !ok {
-		c.SetCookie("token", "", -1, "/", "/", config.App.Https, false)
+		c.SetCookie("token", "", -1, "/", COOKIE_DOMAIN, config.App.Https, false)
 		c.JSON(http.StatusOK, gin.H{
 			"res":  -1,
 			"msg":  "无效cookie，请重新登录",
@@ -145,7 +148,7 @@ func handleChpw(c *gin.Context) {
 	}
 	uinfo, ok := Users_info[token]
 	if !ok {
-		c.SetCookie("token", "", -1, "/", "/", config.App.Https, false)
+		c.SetCookie("token", "", -1, "/", COOKIE_DOMAIN, config.App.Https, false)
 		c.JSON(http.StatusOK, gin.H{
 			"res": -1,
 			"msg": "无效cookie，请重新登录",
@@ -177,7 +180,7 @@ func handleChpw(c *gin.Context) {
 		})
 	}
 	delete(Users_info, token)
-	c.SetCookie("token", "", -1, "/", "/", config.App.Https, false)
+	c.SetCookie("token", "", -1, "/", COOKIE_DOMAIN, config.App.Https, false)
 	log.Println("Delete token", token)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -197,7 +200,7 @@ func handleResetpw(c *gin.Context) {
 	}
 	uinfo, ok := Users_info[token]
 	if !ok {
-		c.SetCookie("token", "", -1, "/", "/", config.App.Https, false)
+		c.SetCookie("token", "", -1, "/", COOKIE_DOMAIN, config.App.Https, false)
 		c.JSON(http.StatusOK, gin.H{
 			"res": -1,
 			"msg": "无效cookie，请重新登录",
@@ -323,7 +326,7 @@ func handleGetmembers(c *gin.Context) {
 	}
 	uinfo, ok := Users_info[token]
 	if !ok {
-		c.SetCookie("token", "", -1, "/", "/", config.App.Https, false)
+		c.SetCookie("token", "", -1, "/", COOKIE_DOMAIN, config.App.Https, false)
 		c.JSON(http.StatusOK, gin.H{
 			"res":  -1,
 			"msg":  "无效cookie，请重新登录",
