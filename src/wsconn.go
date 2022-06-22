@@ -159,15 +159,15 @@ func WebsocketServer(c *gin.Context) {
 				sendEvent(ws, updata)
 
 				// TODO send offer
-				peerConnection = newRemoteConnection(ws, userdata)
+				// peerConnection = newRemoteConnection(ws, userdata)
 
-				offer := webrtc.SessionDescription{}
-				//send answer back
-				upload := map[string]interface{}{
-					"action": "offer",
-					"data":   offer,
-				}
-				ws.WriteJSON(upload)
+				// offer := webrtc.SessionDescription{}
+				// //send answer back
+				// upload := map[string]interface{}{
+				// 	"action": "offer",
+				// 	"data":   offer,
+				// }
+				// ws.WriteJSON(upload)
 				log.Println("Websocket write: offer")
 
 				continue
