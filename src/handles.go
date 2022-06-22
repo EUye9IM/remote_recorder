@@ -300,3 +300,71 @@ func checkPw(pw string) (res bool, msg string) {
 	}
 	return
 }
+
+/*- return
+- res: 0/-1 成功/失败
+- msg: 提示信息
+- data: [
+	{
+		- no: 学号
+		- name: 姓名
+		- stu_enable: 0/1
+	},
+*/
+func handleGetmembers(c *gin.Context) {
+	token, err := c.Cookie("token")
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"res":  -1,
+			"msg":  "请先登录",
+			"data": "",
+		})
+		return
+	}
+	uinfo, ok := Users_info[token]
+	if !ok {
+		c.SetCookie("token", "", -1, "/", "/", config.App.Https, true)
+		c.JSON(http.StatusOK, gin.H{
+			"res":  -1,
+			"msg":  "无效cookie，请重新登录",
+			"data": "",
+		})
+		return
+	}
+	if uinfo.Level != "1" {
+		c.JSON(http.StatusOK, gin.H{
+			"res":  -1,
+			"msg":  "您无权限",
+			"data": "",
+		})
+		return
+	}
+
+	data := make([]interface{}, 0)
+
+	// for k, _ := range conn_set {
+	// 	log.Print(k.uinfo)
+	// 	u := gin.H{
+	// 		"no":        k.uinfo.No,
+	// 		"name":      k.uinfo.Name,
+	// 		"stu_level": k.uinfo.Level,
+	// 	}
+	// 	data = append(data, u)
+	// }
+
+	for _, k := range Users_info {
+		log.Print(k)
+		u := gin.H{
+			"no":        k.No,
+			"name":      k.Name,
+			"stu_level": k.Level,
+		}
+		data = append(data, u)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"res":  0,
+		"msg":  "成功",
+		"data": data,
+	})
+}
