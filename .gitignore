@@ -110,4 +110,5 @@ dist
 *.ogg
 *.webm
 *.mp4
+*.ivf
 webrtc.db3

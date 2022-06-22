@@ -342,25 +342,25 @@ func handleGetmembers(c *gin.Context) {
 
 	data := make([]interface{}, 0)
 
-	// for k, _ := range conn_set {
-	// 	log.Print(k.uinfo)
-	// 	u := gin.H{
-	// 		"no":        k.uinfo.No,
-	// 		"name":      k.uinfo.Name,
-	// 		"stu_level": k.uinfo.Level,
-	// 	}
-	// 	data = append(data, u)
-	// }
-
-	for _, k := range Users_info {
-		log.Print(k)
+	for k, _ := range conn_set {
+		log.Print(k.uinfo)
 		u := gin.H{
-			"no":        k.No,
-			"name":      k.Name,
-			"stu_level": k.Level,
+			"no":        k.uinfo.No,
+			"name":      k.uinfo.Name,
+			"stu_level": k.uinfo.Level,
 		}
 		data = append(data, u)
 	}
+
+	// for _, k := range Users_info {
+	// 	log.Print(k)
+	// 	u := gin.H{
+	// 		"no":        k.No,
+	// 		"name":      k.Name,
+	// 		"stu_level": k.Level,
+	// 	}
+	// 	data = append(data, u)
+	// }
 
 	c.JSON(http.StatusOK, gin.H{
 		"res":  0,

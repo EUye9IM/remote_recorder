@@ -64,6 +64,10 @@ func init() {
 			ctx.Redirect(http.StatusMovedPermanently, "/passchange")
 			return
 		}
+		if uinfo.Level == "1" {
+			ctx.Redirect(http.StatusMovedPermanently, "/remote")
+			return
+		}
 		ctx.Redirect(http.StatusMovedPermanently, "/index")
 	})
 	engin.GET("/demo", func(ctx *gin.Context) { handleHtml(ctx, "demo.html") })
@@ -73,9 +77,13 @@ func init() {
 			ctx.Redirect(http.StatusMovedPermanently, "/login")
 			return
 		}
-		_, ok := Users_info[v]
+		uinfo, ok := Users_info[v]
 		if !ok {
 			ctx.Redirect(http.StatusMovedPermanently, "/login")
+			return
+		}
+		if uinfo.Level == "1" {
+			ctx.Redirect(http.StatusMovedPermanently, "/remote")
 			return
 		}
 		handleHtml(ctx, "index.html")
@@ -110,11 +118,16 @@ func init() {
 			ctx.Redirect(http.StatusMovedPermanently, "/login")
 			return
 		}
-		_, ok := Users_info[v]
+		uinfo, ok := Users_info[v]
 		if !ok {
 			ctx.Redirect(http.StatusMovedPermanently, "/login")
 			return
 		}
+		if uinfo.Level != "1" {
+			ctx.Redirect(http.StatusMovedPermanently, "/index")
+			return
+		}
+
 		handleHtml(ctx, "remote.html")
 	})
 
