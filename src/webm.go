@@ -52,9 +52,9 @@ func newWebmSaver(fname string) *webmSaver {
 // }
 func (s *webmSaver) PushOpus(rtpPacket *rtp.Packet) {
 	// 不加这个会panic
-	if s.audioBuilder == nil {
+	/*if s.audioBuilder == nil {
 		return
-	}
+	}*/
 	s.audioBuilder.Push(rtpPacket)
 	for {
 		sample := s.audioBuilder.Pop()
@@ -72,9 +72,9 @@ func (s *webmSaver) PushOpus(rtpPacket *rtp.Packet) {
 }
 func (s *webmSaver) PushVP8(rtpPacket *rtp.Packet) {
 	// 不加这个会panic
-	if s.videoBuilder == nil {
+	/*if s.videoBuilder == nil {
 		return
-	}
+	}*/
 	s.videoBuilder.Push(rtpPacket)
 	for {
 		sample := s.videoBuilder.Pop()
@@ -97,7 +97,7 @@ func (s *webmSaver) PushVP8(rtpPacket *rtp.Packet) {
 		}
 		if s.videoWriter != nil {
 			s.videoTimestamp += sample.Duration
-			if _, err := s.videoWriter.Write(videoKeyframe, int64(s.audioTimestamp/time.Millisecond), sample.Data); err != nil {
+			if _, err := s.videoWriter.Write(videoKeyframe, int64(s.videoTimestamp/time.Millisecond), sample.Data); err != nil {
 				log.Println("webmsaver: ", err)
 				return
 			}

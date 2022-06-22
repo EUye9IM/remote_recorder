@@ -106,10 +106,11 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 							log.Print(err)
 						}
 					}
-					break
+					return
 				}
+				backup := rtpPacket.Clone()
 				saver_screen.PushOpus(rtpPacket)
-				saver_camera.PushOpus(rtpPacket)
+				saver_camera.PushOpus(backup)
 			case webrtc.RTPCodecTypeVideo:
 				if track.StreamID() == conn_data.stream_id.camera {
 					if err != nil {
@@ -121,7 +122,7 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 								log.Print(err)
 							}
 						}
-						break
+						return
 					}
 					saver_camera.PushVP8(rtpPacket)
 				}
@@ -135,7 +136,7 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 								log.Print(err)
 							}
 						}
-						break
+						return
 					}
 					saver_screen.PushVP8(rtpPacket)
 				}
