@@ -15,6 +15,29 @@ password = "1"
 level = "0"
 enable = "1"
 
+[[database.account]]
+no="9999999"
+name = "监控"
+password = "9999999"
+level = "1"
+enable = "1"
+
+# 账号测试
+[[database.account]]
+no="0"
+name = "张张"
+password = "00"
+level = "0"
+enable = "1"
+
+# 监考测试
+[[database.account]]
+no="1"
+name = "监控"
+password = "00"
+level = "1"
+enable = "1"
+
 # 密码
 [password]
 # 复杂密码检查

@@ -28,7 +28,7 @@ func init() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	token_maker.Set("0123456789abcdef", 10)
+	token_maker.Set("0123456789abcdef", 32)
 	Users_info = make(map[string]Uinfo)
 
 	engin = gin.New()
@@ -104,7 +104,19 @@ func init() {
 		}
 		handleHtml(ctx, "passchange.html")
 	})
-	engin.GET("/remote", func(ctx *gin.Context) { handleHtml(ctx, "remote.html") })
+	engin.GET("/remote", func(ctx *gin.Context) {
+		v, err := ctx.Cookie("token")
+		if err != nil {
+			ctx.Redirect(http.StatusMovedPermanently, "/login")
+			return
+		}
+		_, ok := Users_info[v]
+		if !ok {
+			ctx.Redirect(http.StatusMovedPermanently, "/login")
+			return
+		}
+		handleHtml(ctx, "remote.html")
+	})
 
 	api := engin.Group("api")
 	apiRoute(api)
@@ -119,6 +131,7 @@ func apiRoute(r *gin.RouterGroup) {
 	r.POST("/logout", handleLogout)
 	r.POST("/chpw", handleChpw)
 	r.POST("/resetpw", handleResetpw)
+	r.POST("/getmembers", handleGetmembers)
 
 	r.GET("/ws", WebsocketServer)
 }

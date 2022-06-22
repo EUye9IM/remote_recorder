@@ -98,7 +98,7 @@ webrtc的信令服务需要自己实现，将采用websocket实现。
 		{
 			- no: 学号
 			- name: 姓名
-			- stu_enable: 0/1 
+			- stu_level: 0/1 
 		},
 		...
 	]
