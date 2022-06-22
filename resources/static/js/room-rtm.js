@@ -82,32 +82,32 @@ let handleChannelMessage = async (messageData, MemberId) => {
 
 
 // 发送信息，目前还需要完善
-let sendMessage = async (e) => {
-    e.preventDefault()
+// let sendMessage = async (e) => {
+//     e.preventDefault()
 
-    let message = e.target.message.value
-    channel.sendMessage({text:JSON.stringify({'type':'chat', 'message':message, 'displayName':displayName})})
-    addMessageToDom(displayName, message)
-    e.target.reset()
-}
+//     let message = e.target.message.value
+//     channel.sendMessage({text:JSON.stringify({'type':'chat', 'message':message, 'displayName':displayName})})
+//     addMessageToDom(displayName, message)
+//     e.target.reset()
+// }
 
-let addMessageToDom = (name, message) => {
-    let messagesWrapper = document.getElementById('messages')
+// let addMessageToDom = (name, message) => {
+//     let messagesWrapper = document.getElementById('messages')
 
-    let newMessage = `<div class="message__wrapper">
-                        <div class="message__body">
-                            <strong class="message__author">${name}</strong>
-                            <p class="message__text">${message}</p>
-                        </div>
-                    </div>`
+//     let newMessage = `<div class="message__wrapper">
+//                         <div class="message__body">
+//                             <strong class="message__author">${name}</strong>
+//                             <p class="message__text">${message}</p>
+//                         </div>
+//                     </div>`
 
-    messagesWrapper.insertAdjacentHTML('beforeend', newMessage)
+//     messagesWrapper.insertAdjacentHTML('beforeend', newMessage)
 
-    let lastMessage = document.querySelector('#messages .message__wrapper:last-child')
-    if(lastMessage){
-        lastMessage.scrollIntoView()
-    }
-}
+//     let lastMessage = document.querySelector('#messages .message__wrapper:last-child')
+//     if(lastMessage){
+//         lastMessage.scrollIntoView()
+//     }
+// }
 
 
 // 添加Bot信息（即通知信息）

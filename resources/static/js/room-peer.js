@@ -44,16 +44,24 @@ const mediaStreamConstrains = {
     audio: true
 }
 
+const getCookie = (name) => {
+    return document.cookie.split('; ').reduce((r, v) => {
+      const parts = v.split('=')
+      return parts[0] === name ? decodeURIComponent(parts[1]) : r
+    }, '')
+}
+
 const initWebSocket = (url) => {
     ws = new WebSocket(url)
 
     ws.onmessage = handleMessage
     ws.onopen = event => {
         console.log('Websocket open.')
+        console.log(getCookie("token"))
         // 发送token信息
         ws.send(JSON.stringify({
-            'action': token,
-            'data': document.cookie["token"]
+            'action': "token",
+            'data': getCookie("token")
         }))
     }
     ws.onerror = event => {
@@ -94,15 +102,10 @@ const handleMessage = event => {
         handleEvent(message.data)
     }
 
-    if (message.action === 'streamid') {
-        id2content = message.data
-    }
-
     if (message.action === 'offer') {
         createAnswer(message.data)
     }
     
-
     if (message.action === 'answer') {
         addAnswer(message.data)
     }
@@ -331,8 +334,6 @@ let leaveChannel = async () => {
     // 关闭连接
     peerConnection.close()
     console.log("RTCPeerConnection closed!")
-    // 移除用户登录信息
-    sessionStorage.removeItem("user")
 }
 
 window.addEventListener('beforeunload', leaveChannel)
