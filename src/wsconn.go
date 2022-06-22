@@ -11,7 +11,6 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
-// TODO 保存连接至用户名而不是streamid
 // TODO 监控端发送offer
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -20,13 +19,16 @@ var upgrader = websocket.Upgrader{
 }
 
 type ConnData struct {
-	wsconn    *websocket.Conn
-	uinfo     Uinfo
-	joined    bool
-	stream_id struct {
+	wsconn        *websocket.Conn
+	uinfo         Uinfo
+	joined        bool
+	stu_stream_id struct {
 		screen string
 		camera string
 	}
+	// stu_tracks struct {
+	// 	track *webrtc.TrackRemote,
+	// }
 	close sync.Mutex
 }
 
@@ -133,6 +135,40 @@ func WebsocketServer(c *gin.Context) {
 				if userdata.uinfo.Level != "1" {
 					continue
 				}
+				if peerConnection != nil {
+					peerConnection.Close()
+					peerConnection = nil
+				}
+
+				stu_no := js.Data["no"]
+				s_id := ""
+				c_id := ""
+				for i := range conn_set {
+					if i.uinfo.No == stu_no {
+						s_id = i.stu_stream_id.screen
+						c_id = i.stu_stream_id.camera
+					}
+				}
+				updata := map[string]interface{}{
+					"event": "SendStreamId",
+					"streamid": map[string]interface{}{
+						"screen": s_id,
+						"camera": c_id,
+					},
+				}
+				sendEvent(ws, updata)
+
+				// TODO send offer
+				peerConnection = newRemoteConnection(ws, userdata)
+
+				offer := webrtc.SessionDescription{}
+				//send answer back
+				upload := map[string]interface{}{
+					"action": "offer",
+					"data":   offer,
+				}
+				ws.WriteJSON(upload)
+				log.Println("Websocket write: offer")
 
 				continue
 			}
@@ -158,8 +194,8 @@ func WebsocketServer(c *gin.Context) {
 				continue
 			}
 
-			userdata.stream_id.screen = js.Data.Screen
-			userdata.stream_id.camera = js.Data.Camera
+			userdata.stu_stream_id.screen = js.Data.Screen
+			userdata.stu_stream_id.camera = js.Data.Camera
 
 			continue
 		}
@@ -170,6 +206,10 @@ func WebsocketServer(c *gin.Context) {
 			}
 			if userdata.uinfo.Level != "0" {
 				continue
+			}
+			if peerConnection != nil {
+				peerConnection.Close()
+				peerConnection = nil
 			}
 			var js struct {
 				Action string                    `json:"action"`
@@ -197,7 +237,10 @@ func WebsocketServer(c *gin.Context) {
 			if !userdata.joined {
 				continue
 			}
-			if userdata.uinfo.Level != "0" {
+			// if userdata.uinfo.Level != "0" {
+			// 	continue
+			// }
+			if peerConnection == nil {
 				continue
 			}
 			var js struct {
@@ -230,4 +273,11 @@ func boardcastEvent(level string, exc *websocket.Conn, data map[string]interface
 			k.wsconn.WriteJSON(upload)
 		}
 	}
+}
+func sendEvent(to *websocket.Conn, data map[string]interface{}) {
+	upload := map[string]interface{}{
+		"action": "event",
+		"data":   data,
+	}
+	to.WriteJSON(upload)
 }

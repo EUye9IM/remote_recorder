@@ -82,10 +82,10 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 	) {
 		var file media.Writer
 		class := track.StreamID()
-		if track.StreamID() == conn_data.stream_id.camera {
+		if track.StreamID() == conn_data.stu_stream_id.camera {
 			class = "camera"
 		}
-		if track.StreamID() == conn_data.stream_id.screen {
+		if track.StreamID() == conn_data.stu_stream_id.screen {
 			class = "screen"
 		}
 		if track.Kind() == webrtc.RTPCodecTypeAudio {
@@ -157,4 +157,104 @@ func connectionAnswer(
 		log.Panicln(err)
 	}
 	return answer
+}
+
+func newRemoteConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnection {
+
+	// Create a MediaEngine object to configure the supported codec
+	m := &webrtc.MediaEngine{}
+
+	// Setup the codecs you want to use.
+	// We'll use a H264 and Opus but you can also define your own
+	if err := m.RegisterCodec(webrtc.RTPCodecParameters{
+		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeVP8, ClockRate: 90000, Channels: 0, SDPFmtpLine: "", RTCPFeedback: nil},
+		PayloadType:        96,
+	}, webrtc.RTPCodecTypeVideo); err != nil {
+		log.Panicln(err)
+	}
+	if err := m.RegisterCodec(webrtc.RTPCodecParameters{
+		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeOpus, ClockRate: 48000, Channels: 0, SDPFmtpLine: "", RTCPFeedback: nil},
+		PayloadType:        111,
+	}, webrtc.RTPCodecTypeAudio); err != nil {
+		log.Panicln(err)
+	}
+	i := &interceptor.Registry{}
+
+	// Use the default set of Interceptors
+	if err := webrtc.RegisterDefaultInterceptors(m, i); err != nil {
+		log.Panicln(err)
+	}
+
+	// Create the API object with the MediaEngine
+	api := webrtc.NewAPI(webrtc.WithMediaEngine(m), webrtc.WithInterceptorRegistry(i))
+
+	peerConnection, err := api.NewPeerConnection(webrtc.Configuration{})
+	if err != nil {
+		log.Panicln("NewPeerConnection error: " + err.Error())
+	}
+
+	peerConnection.OnICECandidate(func(i *webrtc.ICECandidate) {
+		upload := map[string]interface{}{
+			"action": "candidate",
+			"data":   i,
+		}
+		ws.WriteJSON(upload)
+	})
+
+	peerConnection.OnConnectionStateChange(func(s webrtc.PeerConnectionState) {
+		log.Printf("Peer Connection State has changed: %s\n", s.String())
+
+		if s == webrtc.PeerConnectionStateFailed {
+			// Wait until PeerConnection has had no network activity for 30 seconds or another failure. It may be reconnected using an ICE Restart.
+			// Use webrtc.PeerConnectionStateDisconnected if you are interested in detecting faster timeout.
+			// Note that the PeerConnection may come back from PeerConnectionStateDisconnected.
+			log.Println("Peer Connection has gone to failed exiting")
+		}
+	})
+
+	// Allow us to receive 1 audio track, and 1 video track
+	if _, err = peerConnection.AddTransceiverFromKind(webrtc.RTPCodecTypeAudio); err != nil {
+		log.Panicln(err)
+	} else if _, err = peerConnection.AddTransceiverFromKind(webrtc.RTPCodecTypeVideo); err != nil {
+		log.Panicln(err)
+	} else if _, err = peerConnection.AddTransceiverFromKind(webrtc.RTPCodecTypeVideo); err != nil {
+		log.Panicln(err)
+	}
+
+	peerConnection.OnTrack(func(
+		track *webrtc.TrackRemote,
+		receiver *webrtc.RTPReceiver,
+	) {
+		var file media.Writer
+		class := track.StreamID()
+		if track.StreamID() == conn_data.stu_stream_id.camera {
+			class = "camera"
+		}
+		if track.StreamID() == conn_data.stu_stream_id.screen {
+			class = "screen"
+		}
+		if track.Kind() == webrtc.RTPCodecTypeAudio {
+			file, err = oggwriter.New(conn_data.uinfo.No+"_"+conn_data.uinfo.Name+"_"+class+"_"+GetTime()+".ogg", 48000, 2)
+			if err != nil {
+				log.Panicln(err)
+			}
+		} else if track.Kind() == webrtc.RTPCodecTypeVideo {
+			file, err = ivfwriter.New(conn_data.uinfo.No + "_" + conn_data.uinfo.Name + "_" + class + "_" + GetTime() + ".ivf")
+			if err != nil {
+				log.Panicln(err)
+			}
+		}
+		go func() {
+			ticker := time.NewTicker(time.Second * 3)
+			for range ticker.C {
+				errSend := peerConnection.WriteRTCP([]rtcp.Packet{&rtcp.PictureLossIndication{MediaSSRC: uint32(track.SSRC())}})
+				if errSend != nil {
+					return
+				}
+			}
+		}()
+		saveToDisk(file, track)
+	})
+
+	return peerConnection
 }
