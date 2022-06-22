@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"time"
 
@@ -8,13 +9,11 @@ import (
 	"github.com/pion/interceptor"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
-	"github.com/pion/webrtc/v3/pkg/media"
-	"github.com/pion/webrtc/v3/pkg/media/ivfwriter"
-	"github.com/pion/webrtc/v3/pkg/media/oggwriter"
 )
 
 func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnection {
-
+	saver_screen := newWebmSaver(conn_data.uinfo.No + "_" + conn_data.uinfo.Name + "_screen_" + GetTime() + ".webm")
+	saver_camera := newWebmSaver(conn_data.uinfo.No + "_" + conn_data.uinfo.Name + "_camera_" + GetTime() + ".webm")
 	// Create a MediaEngine object to configure the supported codec
 	m := &webrtc.MediaEngine{}
 
@@ -32,15 +31,15 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 	}, webrtc.RTPCodecTypeAudio); err != nil {
 		log.Panicln(err)
 	}
-	i := &interceptor.Registry{}
+	intercept := &interceptor.Registry{}
 
 	// Use the default set of Interceptors
-	if err := webrtc.RegisterDefaultInterceptors(m, i); err != nil {
+	if err := webrtc.RegisterDefaultInterceptors(m, intercept); err != nil {
 		log.Panicln(err)
 	}
 
 	// Create the API object with the MediaEngine
-	api := webrtc.NewAPI(webrtc.WithMediaEngine(m), webrtc.WithInterceptorRegistry(i))
+	api := webrtc.NewAPI(webrtc.WithMediaEngine(m), webrtc.WithInterceptorRegistry(intercept))
 
 	peerConnection, err := api.NewPeerConnection(webrtc.Configuration{})
 	if err != nil {
@@ -53,7 +52,6 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 			"data":   i,
 		}
 		ws.WriteJSON(upload)
-		log.Println("Websocket write: candidate")
 	})
 
 	peerConnection.OnConnectionStateChange(func(s webrtc.PeerConnectionState) {
@@ -80,58 +78,56 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 		track *webrtc.TrackRemote,
 		receiver *webrtc.RTPReceiver,
 	) {
-		var file media.Writer
-		class := track.StreamID()
-		if track.StreamID() == conn_data.stream_id.camera {
-			class = "camera"
-		}
-		if track.StreamID() == conn_data.stream_id.screen {
-			class = "screen"
-		}
-		if track.Kind() == webrtc.RTPCodecTypeAudio {
-			file, err = oggwriter.New(conn_data.uinfo.No+"_"+conn_data.uinfo.Name+"_"+class+"_"+GetTime()+".ogg", 48000, 2)
-			if err != nil {
-				log.Panicln(err)
-			}
-		} else if track.Kind() == webrtc.RTPCodecTypeVideo {
-			file, err = ivfwriter.New(conn_data.uinfo.No + "_" + conn_data.uinfo.Name + "_" + class + "_" + GetTime() + ".ivf")
-			if err != nil {
-				log.Panicln(err)
-			}
-		}
 		go func() {
 			ticker := time.NewTicker(time.Second * 3)
 			for range ticker.C {
 				errSend := peerConnection.WriteRTCP([]rtcp.Packet{&rtcp.PictureLossIndication{MediaSSRC: uint32(track.SSRC())}})
 				if errSend != nil {
-					log.Println(errSend)
 					return
 				}
 			}
 		}()
-		saveToDisk(file, track)
-	})
 
+		switch track.Kind() {
+		case webrtc.RTPCodecTypeAudio:
+			saveToDisk(saver_camera, conn_data, track)
+			saveToDisk(saver_screen, conn_data, track)
+		case webrtc.RTPCodecTypeVideo:
+			if track.StreamID() == conn_data.stream_id.camera {
+				log.Println("ONTRACK-CAMERA")
+				saveToDisk(saver_camera, conn_data, track)
+			}
+			if track.StreamID() == conn_data.stream_id.screen {
+				log.Println("ONTRACK-SCREEN")
+				saveToDisk(saver_screen, conn_data, track)
+			}
+		}
+	})
 	return peerConnection
 }
-func saveToDisk(i media.Writer, track *webrtc.TrackRemote) {
-	defer func() {
-		if err := i.Close(); err != nil {
-			log.Println(err)
-		}
-	}()
-
+func saveToDisk(saver *webmSaver, conn_data *ConnData, track *webrtc.TrackRemote) {
 	for {
 		rtpPacket, _, err := track.ReadRTP()
 		if err != nil {
-			log.Println(err)
+			if err != io.EOF {
+				log.Println(err)
+				break
+			}
+		}
+		// 不加这个会panic
+		if rtpPacket == nil {
 			break
 		}
-		if err := i.WriteRTP(rtpPacket); err != nil {
-			log.Println(err)
-			break
+		switch track.Kind() {
+		case webrtc.RTPCodecTypeAudio:
+			saver.PushOpus(rtpPacket)
+		case webrtc.RTPCodecTypeVideo:
+			saver.PushVP8(rtpPacket)
 		}
 	}
+	conn_data.close.Lock()
+	defer conn_data.close.Unlock()
+	saver.Close()
 }
 func connectionAnswer(
 	peerConnection *webrtc.PeerConnection,

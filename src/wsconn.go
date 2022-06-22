@@ -11,7 +11,6 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
-// TODO 保存连接至用户名而不是streamid
 // TODO 监控端发送offer
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -172,7 +171,6 @@ func WebsocketServer(c *gin.Context) {
 			err = json.Unmarshal(content, &js)
 			offer := js.Data
 			if err == nil && offer.Type == webrtc.SDPTypeOffer {
-				log.Println("receive offer: " + offer.SDP)
 				peerConnection = newConnection(ws, userdata)
 
 				answer := connectionAnswer(peerConnection, offer)

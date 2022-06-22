@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -13,16 +12,22 @@ import (
 	"github.com/pion/webrtc/v3/pkg/media/samplebuilder"
 )
 
+// FIXME 保存的文件好像元数据有问题
+// FIXME screen流一直没有videoKeyframe以致于文件无法保存
+// FIXME 进度条无法拖动，可能因为是元数据的问题
+
 type webmSaver struct {
 	audioWriter, videoWriter       webm.BlockWriteCloser
 	audioBuilder, videoBuilder     *samplebuilder.SampleBuilder
 	audioTimestamp, videoTimestamp time.Duration
+	file_name                      string
 }
 
-func newWebmSaver() *webmSaver {
+func newWebmSaver(fname string) *webmSaver {
 	return &webmSaver{
 		audioBuilder: samplebuilder.New(10, &codecs.OpusPacket{}, 48000),
 		videoBuilder: samplebuilder.New(10, &codecs.VP8Packet{}, 90000),
+		file_name:    fname,
 	}
 }
 
@@ -39,8 +44,11 @@ func (s *webmSaver) Close() {
 	}
 }
 func (s *webmSaver) PushOpus(rtpPacket *rtp.Packet) {
+	// 不加这个会panic
+	if s.audioBuilder == nil {
+		return
+	}
 	s.audioBuilder.Push(rtpPacket)
-
 	for {
 		sample := s.audioBuilder.Pop()
 		if sample == nil {
@@ -49,14 +57,18 @@ func (s *webmSaver) PushOpus(rtpPacket *rtp.Packet) {
 		if s.audioWriter != nil {
 			s.audioTimestamp += sample.Duration
 			if _, err := s.audioWriter.Write(true, int64(s.audioTimestamp/time.Millisecond), sample.Data); err != nil {
-				panic(err)
+				log.Println("webmsaver: ", err)
+				return
 			}
 		}
 	}
 }
 func (s *webmSaver) PushVP8(rtpPacket *rtp.Packet) {
+	// 不加这个会panic
+	if s.videoBuilder == nil {
+		return
+	}
 	s.videoBuilder.Push(rtpPacket)
-
 	for {
 		sample := s.videoBuilder.Pop()
 		if sample == nil {
@@ -64,6 +76,7 @@ func (s *webmSaver) PushVP8(rtpPacket *rtp.Packet) {
 		}
 		// Read VP8 header.
 		videoKeyframe := (sample.Data[0]&0x1 == 0)
+		// FIXME 这里screen流一直没有videoKeyframe不知道咋回事
 		if videoKeyframe {
 			// Keyframe has frame information.
 			raw := uint(sample.Data[6]) | uint(sample.Data[7])<<8 | uint(sample.Data[8])<<16 | uint(sample.Data[9])<<24
@@ -78,15 +91,17 @@ func (s *webmSaver) PushVP8(rtpPacket *rtp.Packet) {
 		if s.videoWriter != nil {
 			s.videoTimestamp += sample.Duration
 			if _, err := s.videoWriter.Write(videoKeyframe, int64(s.audioTimestamp/time.Millisecond), sample.Data); err != nil {
-				panic(err)
+				log.Println("webmsaver: ", err)
+				return
 			}
 		}
 	}
 }
 func (s *webmSaver) InitWriter(width, height int) {
-	w, err := os.OpenFile("test.webm", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	w, err := os.OpenFile(s.file_name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		panic(err)
+		log.Println("webmsaver: ", err)
+		return
 	}
 
 	ws, err := webm.NewSimpleBlockWriter(w,
@@ -116,9 +131,9 @@ func (s *webmSaver) InitWriter(width, height int) {
 			},
 		})
 	if err != nil {
-		panic(err)
+		log.Println("webmsaver: ", err)
+		return
 	}
-	fmt.Printf("WebM saver has started with video width=%d, height=%d\n", width, height)
 	s.audioWriter = ws[0]
 	s.videoWriter = ws[1]
 }

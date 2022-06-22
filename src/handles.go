@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//TODO cookiedomain
 const COOKIE_DOMAIN = ""
 
 var (
