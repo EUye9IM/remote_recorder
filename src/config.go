@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"os"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -52,5 +53,6 @@ func init() {
 	if !strings.HasSuffix(config.Save_path, "/") {
 		config.Save_path += "/"
 	}
+	os.MkdirAll(config.Save_path, os.ModePerm)
 	dbinit()
 }
