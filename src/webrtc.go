@@ -57,9 +57,12 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 	}
 
 	peerConnection.OnICECandidate(func(i *webrtc.ICECandidate) {
+		if i == nil {
+			return
+		}
 		upload := map[string]interface{}{
 			"action": "candidate",
-			"data":   i,
+			"data":   *i,
 			"uuid":   conn_data.uuid,
 		}
 		wsSend(ws, upload)
