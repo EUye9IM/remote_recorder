@@ -76,6 +76,7 @@ func WebsocketServer(c *gin.Context) {
 		}
 		if userdata.uuid == "" {
 			delete(uuid_map, userdata.uuid)
+			log.Println("uuid_map delete", userdata.uuid)
 		}
 		userdata.close.Unlock()
 		if cErr := peerConnection.Close(); cErr != nil {
@@ -92,9 +93,10 @@ func WebsocketServer(c *gin.Context) {
 		var js map[string]interface{}
 		err = json.Unmarshal(content, &js)
 		if err != nil {
-			log.Println("receive not json: " + string(content))
+			log.Println("Websocket receive not json: " + string(content))
 			continue
 		}
+		log.Println("Websocket receive: ", content)
 		if js["action"] == "token" {
 			var js struct {
 				Action string `json:"action"`
@@ -111,7 +113,6 @@ func WebsocketServer(c *gin.Context) {
 				}
 			}
 
-			log.Println("Websocket token: ", js.Data)
 			userdata.uinfo = Users_info[js.Data]
 			userdata.joined = true
 			updata := map[string]interface{}{
@@ -164,10 +165,13 @@ func WebsocketServer(c *gin.Context) {
 						"screen": s_id,
 						"camera": c_id,
 					},
-					"uuid": uuid,
 				}
 				sendEvent(ws, updata)
 				uuid_map[uuid] = ConnDataPair{s: sconn, t: userdata}
+				log.Println("uuid_map add", uuid)
+
+				sendUuid(uuid_map[uuid].s.wsconn, uuid)
+				sendUuid(uuid_map[uuid].w.wsconn, uuid)
 
 				continue
 			}
@@ -199,6 +203,7 @@ func WebsocketServer(c *gin.Context) {
 			// uuid=serveruuid
 			uuid_map[js.Uuid] = ConnDataPair{s: userdata, t: nil}
 			userdata.uuid = js.Uuid
+			defer log.Println("uuid_map add", userdata.uuid)
 
 			continue
 		}
@@ -240,10 +245,10 @@ func WebsocketServer(c *gin.Context) {
 						uuid_map[js.Uuid].s.wsconn.WriteJSON(js)
 					}
 				}
+				continue
 			} else {
 				logUnknown(string(content))
 			}
-			continue
 		}
 		if js["action"] == "candidate" {
 			if !userdata.joined {
@@ -321,7 +326,12 @@ func WebsocketServer(c *gin.Context) {
 	}
 }
 func logUnknown(content string) {
-	log.Println("Websocket Read unknown: " + string(content))
+	log.Println(+"Websocket Read unknown: " + string(content))
+}
+
+func wsSend(ws *websocket.Conn, data interface{}) {
+	log.Println("Websocket send: ", data)
+	ws.WriteJSON(data)
 }
 
 func boardcastEvent(level string, exc *websocket.Conn, data map[string]interface{}) {
@@ -331,7 +341,7 @@ func boardcastEvent(level string, exc *websocket.Conn, data map[string]interface
 	}
 	for k := range conn_set {
 		if k.uinfo.Level == level && k.wsconn != exc {
-			k.wsconn.WriteJSON(upload)
+			wsSend(k.wsconn, upload)
 		}
 	}
 }
@@ -340,5 +350,12 @@ func sendEvent(to *websocket.Conn, data map[string]interface{}) {
 		"action": "event",
 		"data":   data,
 	}
-	to.WriteJSON(upload)
+	wsSend(to, upload)
+}
+func sendUuid(to *websocket.Conn, uuid string) {
+	upload := map[string]interface{}{
+		"action": "uuid",
+		"data":   uuid,
+	}
+	wsSend(to, upload)
 }
