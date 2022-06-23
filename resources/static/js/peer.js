@@ -367,7 +367,6 @@ const createAnswer = async (uuid, offer) => {
     })
     ws.send(json)
     console.log('answer send.')
-    console.log(answer)
 }
 
 const addAnswer = async (uuid, answer) => {
