@@ -306,9 +306,11 @@ func WebsocketServer(c *gin.Context) {
 				Uuid   string                  `json:"uuid"`
 			}
 			err = json.Unmarshal(content, &js)
+			log.Println("确认收到answer")
 			// check uuid=serveruuid
 			candidate := js.Data
 			if err == nil {
+				log.Println("开始转发")
 				if uuid_map[js.Uuid].t == nil {
 					peerConnection.AddICECandidate(candidate)
 				} else {
