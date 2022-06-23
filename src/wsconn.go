@@ -223,8 +223,8 @@ func WebsocketServer(c *gin.Context) {
 			offer := js.Data
 			// check uuid=serveruuid
 			if err == nil && offer.Type == webrtc.SDPTypeOffer {
-				log.Println(offer.Type)
 				if uuid_map[js.Uuid].t == nil {
+					log.Println("peerConnection 需要创建")
 					peerConnection = newConnection(ws, userdata)
 
 					answer := connectionAnswer(peerConnection, offer)

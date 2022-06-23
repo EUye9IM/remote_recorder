@@ -104,14 +104,15 @@ const handleMessage = event => {
     // }
     console.log(message)
     console.log(`recieve ${message.action}.`)
+    
 
     if (message.action === 'event') {
         // 事件处理
         handleEvent(message.data)
     }
 
-    const uuid = message.data.uuid
-    const data = message.data.data
+    const uuid = message.uuid
+    const data = message.data
 
     if (message.action === 'offer') {
         createAnswer(uuid, data)
@@ -164,10 +165,8 @@ async function negotiation(uuid) {
         // 发送 offer 信息
         ws.send(JSON.stringify({
             action: 'offer',
-            'data': {
-                'data': offer,
-                'uuid': uuid
-            }
+            'data': offer,
+            'uuid': uuid
         }))
         console.log('offer send.')
     } catch (err) {
@@ -209,10 +208,8 @@ async function createPeerConnection(uuid) {
             // 发送 candidate 信息
             ws.send(JSON.stringify({
                 'action': 'candidate',
-                'data': {
-                    'data': event.candidate,
-                    'uuid': uuid
-                }
+                'data': event.candidate,
+                'uuid': uuid
             }))
             console.log('candidate send.')
         }
@@ -359,10 +356,8 @@ const createAnswer = async (uuid, offer) => {
 
     const json = JSON.stringify({
         'action': 'answer',
-        'data': {
-            'data': answer,
-            'uuid': uuid
-        }
+        'data': answer,
+        'uuid': uuid
     })
     ws.send(json)
     console.log('answer send.')
@@ -387,7 +382,7 @@ let leaveChannel = async () => {
     // peerConnections.forEach(peerConnection => {
     //     peerConnection.close()
     // })
-    for (uuid in peerConnections) {
+    for (const uuid in peerConnections) {
         peerConnections[uuid].close()
     }
     
