@@ -50,7 +50,7 @@ data: {
 ### 服务端发
 | Action    | 结构                                                                       | 接受方     |
 | --------- | -------------------------------------------------------------------------- | ---------- |
-| answer    | `{action: "answer", data: ...}`                                            | S          |
+| answer    | `{action: "answer", data: ..., uuid: uuid}`                                            | S          |
 | answer    | `{action: "answer", data:{data: ...}, uuid: uuid}`                         | S(转发自T) |
 | candidate | `{action: "candidate", data: ...}`                                         | S          |
 | candidate | `{action: "candidate",data:{data: ...}, uuid: uuid}`                       | S(转发自T) |
