@@ -124,6 +124,10 @@ const joinStream = async () => {
 
     // 需要获取远程某位考生的信息
     MemberId = $("#Select__Members option:selected").val()
+    if (MemberId == null) {
+        return;
+    }
+
     console.log(`get ${MemberId} stream`)
     await ws.send(JSON.stringify({
         'action': 'event',
@@ -188,6 +192,22 @@ $('#join-stream-btn').click(async event => {
     await event.preventDefault()
     console.log("click join-btn")
     
+    // 首先移除视频流原本的track
+    cameraStream.getTracks().forEach( track => {
+        console.log('remove track ', track)
+        cameraStream.removeTrack(track)
+    })
+    screenStream.getTracks().forEach( track => {
+        console.log('remove track ', track)
+        screenStream.removeTrack(track)
+    })
+    for (key in peerConnections) {
+        peerConnections[key].close()
+    }
+    
+    // 清空peerConnection
+    // peerConnections.clear()
+
     // await getStream()
     joinStream()
 })
