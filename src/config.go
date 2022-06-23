@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -47,6 +48,9 @@ func init() {
 
 	if _, err := toml.DecodeFile(config_path, &config); err != nil {
 		panic("File: " + config_path + " error.\n" + err.Error())
+	}
+	if !strings.HasSuffix(config.Save_path, "/") {
+		config.Save_path += "/"
 	}
 	dbinit()
 }

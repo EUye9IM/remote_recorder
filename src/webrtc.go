@@ -10,7 +10,7 @@ import (
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
 	"github.com/pion/webrtc/v3/pkg/media"
-	"github.com/pion/webrtc/v3/pkg/media/ivfwriter"
+	"github.com/pion/webrtc/v3/pkg/media/h264writer"
 	"github.com/pion/webrtc/v3/pkg/media/oggwriter"
 )
 
@@ -22,7 +22,7 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 	// Setup the codecs you want to use.
 	// We'll use a H264 and Opus but you can also define your own
 	if err := m.RegisterCodec(webrtc.RTPCodecParameters{
-		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeVP8, ClockRate: 90000, Channels: 0, SDPFmtpLine: "", RTCPFeedback: nil},
+		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264, ClockRate: 90000, Channels: 0, SDPFmtpLine: "", RTCPFeedback: nil},
 		PayloadType:        96,
 	}, webrtc.RTPCodecTypeVideo); err != nil {
 		log.Panicln(err)
@@ -108,7 +108,7 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 				log.Panicln(err)
 			}
 		} else if track.Kind() == webrtc.RTPCodecTypeVideo {
-			file, err = ivfwriter.New(config.Save_path + conn_data.uinfo.No + "_" + conn_data.uinfo.Name + "_" + class + "_" + GetTime() + ".ivf")
+			file, err = h264writer.New(config.Save_path + conn_data.uinfo.No + "_" + conn_data.uinfo.Name + "_" + class + "_" + GetTime() + ".mp4")
 			if err != nil {
 				log.Panicln(err)
 			}
