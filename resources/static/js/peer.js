@@ -119,6 +119,7 @@ const handleMessage = async event => {
     }
 
     if (message.action === 'answer') {
+        console.log(data)
         addAnswer(uuid, data)
     }
 
@@ -366,6 +367,7 @@ const createAnswer = async (uuid, offer) => {
     })
     ws.send(json)
     console.log('answer send.')
+    console.log(answer)
 }
 
 const addAnswer = async (uuid, answer) => {

@@ -297,18 +297,20 @@ func WebsocketServer(c *gin.Context) {
 			if userdata.uinfo.Level != "1" {
 				continue
 			}
-			if peerConnection == nil {
-				continue
-			}
+			// if peerConnection == nil {
+			// 	continue
+			// }
 			var js struct {
 				Action string                  `json:"action"`
 				Data   webrtc.ICECandidateInit `json:"data"`
 				Uuid   string                  `json:"uuid"`
 			}
 			err = json.Unmarshal(content, &js)
+			log.Println("确认收到answer")
 			// check uuid=serveruuid
 			candidate := js.Data
 			if err == nil {
+				log.Println("开始转发")
 				if uuid_map[js.Uuid].t == nil {
 					peerConnection.AddICECandidate(candidate)
 				} else {
