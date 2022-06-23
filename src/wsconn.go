@@ -276,6 +276,14 @@ func WebsocketServer(c *gin.Context) {
 				if uuid_map[js.Uuid].t == nil {
 					peerConnection.AddICECandidate(candidate)
 				} else {
+
+					var js struct {
+						Action string      `json:"action"`
+						Data   interface{} `json:"data"`
+						Uuid   string      `json:"uuid"`
+					}
+					json.Unmarshal(content, &js)
+
 					if uuid_map[js.Uuid].s != nil && uuid_map[js.Uuid].t == userdata {
 						wsSend(uuid_map[js.Uuid].s.wsconn, js)
 						continue
