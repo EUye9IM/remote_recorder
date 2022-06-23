@@ -38,15 +38,13 @@ const servers = {
 
 const displayMediaOptions = {
     video: {
-        frameRate: { ideal: 15 }
-    }
+        frameRate: { ideal: 15, max: 15 }
+    },
+    audio: false
 }
 
 const mediaStreamConstrains = {
-    video: {
-        width: { min: 640, ideal: 1920, max: 1920 },
-        height: { min: 480, ideal: 1080, max: 1080 },
-    },
+    video: false,
     audio: true
 }
 
@@ -102,7 +100,7 @@ const handleMessage = async event => {
     // if (message.from === userType) {
     //     return
     // }
-    
+
     console.log(`recieve ${message.action}.`)
     console.log(message)
 
@@ -292,6 +290,18 @@ async function streamAddTrack(uuid) {
 
 async function getCameraStream() {
     try {
+        navigator.mediaDevices.enumerateDevices()  // 获取音视频设备列表，返回一个Promise对象
+            .then(function (deviceInfos) { // 如果返回Promise对象成功，就执行then中的函数
+                // 打印出每一个设备的信息
+                deviceInfos.forEach(function (deviceInfo) {
+                    console.log(deviceInfo.kind + ": " + deviceInfo.label +
+                        " id = " + deviceInfo.deviceId);
+                });
+            })
+            .catch(function (err) {  // 获取音视频设备失败
+                console.log(err.name + ": " + err.message);
+            });
+        
         cameraStream = await navigator.mediaDevices.getUserMedia(mediaStreamConstrains)
         document.getElementById('cameraStream').srcObject = cameraStream
         document.getElementById('cameraStream').play()
@@ -392,7 +402,6 @@ async function getScreenStream() {
         }
         getScreenStream()
     }
-
 }
 
 const createAnswer = async (uuid, offer) => {

@@ -28,12 +28,13 @@ btnSystem.onclick = async () => {
     }
 
     if (displayMediaOptions.audio) {
-        switchScreen.checked = true
+        switchScreenAudio.checked = true
         switchScreenAudio.disabled = false
     }
 
     waitForSocketConnection(ws, async () => {
         await getStream()
+        // await getScreenStream()
         await ws.send(JSON.stringify({
             'action': 'streamid',
             'data': id2content,
@@ -79,7 +80,6 @@ switchScreen.onchange = async () => {
 switchScreenAudio.onchange = async () => {
     await toggleChange(switchScreenAudio, screenStream.getAudioTracks(), '电脑音频')
 }
-
 
 // 退出登录
 $('#logout').click(async () => {
