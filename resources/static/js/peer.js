@@ -192,15 +192,7 @@ async function createPeerConnection(uuid) {
     peerConnections[uuid] = new RTCPeerConnection(servers)
 
     peerConnections[uuid].ontrack = event => {
-        // 首先移除视频流原本的track
-        // cameraStream.getTracks().forEach( track => {
-        //     console.log('remove track ', track)
-        //     cameraStream.removeTrack(track)
-        // })
-        // screenStream.getTracks().forEach( track => {
-        //     console.log('remove track ', track)
-        //     screenStream.removeTrack(track)
-        // })
+
 
         console.log("track event", event)
         if (id2content.camera === event.streams[0].id) {
