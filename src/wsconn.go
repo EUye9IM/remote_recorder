@@ -261,9 +261,9 @@ func WebsocketServer(c *gin.Context) {
 			// if userdata.uinfo.Level != "0" {
 			// 	continue
 			// }
-			if peerConnection == nil {
-				continue
-			}
+			// if peerConnection == nil {
+			// 	continue
+			// }
 			var js struct {
 				Action string                  `json:"action"`
 				Data   webrtc.ICECandidateInit `json:"data"`
@@ -315,15 +315,25 @@ func WebsocketServer(c *gin.Context) {
 					peerConnection.AddICECandidate(candidate)
 				} else {
 					log.Println("转发answer")
+					var js struct {
+						Action string      `json:"action"`
+						Data   interface{} `json:"data"`
+						Uuid   string      `json:"uuid"`
+					}
+					json.Unmarshal(content, &js)
+
 					if uuid_map[js.Uuid].s != nil && uuid_map[js.Uuid].t == userdata {
 						log.Println("转发给学生端")
-						wsSend(uuid_map[js.Uuid].s.wsconn, string(content))
+						wsSend(uuid_map[js.Uuid].s.wsconn, js)
 						continue
 					}
 					if uuid_map[js.Uuid].t != nil && uuid_map[js.Uuid].s == userdata {
 						log.Println("转发给教师端")
-						wsSend(uuid_map[js.Uuid].t.wsconn, string(content))
+						wsSend(uuid_map[js.Uuid].t.wsconn, js)
 						continue
+					}
+					for i, v := range uuid_map {
+						log.Printf(" %v %v %p %p\n", js.Uuid, i, v.s, v.t)
 					}
 				}
 			} else {
@@ -339,7 +349,8 @@ func logUnknown(content string) {
 }
 
 func wsSend(ws *websocket.Conn, data interface{}) {
-	log.Println("Websocket send: ", data)
+	s, _ := json.Marshal(data)
+	log.Printf("Websocket send: %v", string(s))
 	ws.WriteJSON(data)
 }
 
