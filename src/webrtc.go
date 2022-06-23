@@ -43,7 +43,15 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 	// Create the API object with the MediaEngine
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(m), webrtc.WithInterceptorRegistry(i))
 
-	peerConnection, err := api.NewPeerConnection(webrtc.Configuration{})
+	webrtc_config := webrtc.Configuration{
+		ICEServers: []webrtc.ICEServer{
+			{
+				URLs: []string{"stun:stun.l.google.com:19302"},
+			},
+		},
+	}
+
+	peerConnection, err := api.NewPeerConnection(webrtc_config)
 	if err != nil {
 		log.Panicln("NewPeerConnection error: " + err.Error())
 	}

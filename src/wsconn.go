@@ -332,9 +332,6 @@ func WebsocketServer(c *gin.Context) {
 						wsSend(uuid_map[js.Uuid].t.wsconn, js)
 						continue
 					}
-					for i, v := range uuid_map {
-						log.Printf(" %v %v %p %p\n", js.Uuid, i, v.s, v.t)
-					}
 				}
 			} else {
 				logUnknown(string(content))
