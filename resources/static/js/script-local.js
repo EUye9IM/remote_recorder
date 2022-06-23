@@ -39,6 +39,7 @@ btnSystem.onclick = async () => {
             'data': id2content,
             'uuid': serveruuid
         }))
+        console.log(`uuid ${serveruuid} send.`)
         await negotiation(serveruuid)
     })
 
