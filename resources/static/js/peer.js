@@ -102,9 +102,9 @@ const handleMessage = async event => {
     // if (message.from === userType) {
     //     return
     // }
-    console.log(message)
+    
     console.log(`recieve ${message.action}.`)
-
+    console.log(message)
 
     if (message.action === 'event') {
         // 事件处理
@@ -144,11 +144,11 @@ const handleMessage = async event => {
 
 const AddIceCandidate = (uuid, candidate) => {
     if (peerConnections[uuid]) {
-        console.log(candidate)
+        // console.log(candidate)
         peerConnections[uuid].addIceCandidate(new RTCIceCandidate(candidate)).then(() => {
             console.log("new ice candidate")
             console.log(new RTCIceCandidate(candidate))
-        }).then(event => {
+        }).catch(event => {
             console.log(event)
         })
     }

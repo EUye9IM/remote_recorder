@@ -274,6 +274,7 @@ func WebsocketServer(c *gin.Context) {
 			candidate := js.Data
 			if err == nil {
 				if uuid_map[js.Uuid].t == nil {
+					log.Println("解析后的candidate: ", candidate)
 					peerConnection.AddICECandidate(candidate)
 				} else {
 
