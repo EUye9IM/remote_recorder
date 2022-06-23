@@ -171,7 +171,7 @@ func WebsocketServer(c *gin.Context) {
 				log.Println("uuid_map add", uuid)
 
 				sendUuid(uuid_map[uuid].s.wsconn, uuid)
-				sendUuid(uuid_map[uuid].w.wsconn, uuid)
+				sendUuid(uuid_map[uuid].t.wsconn, uuid)
 
 				continue
 			}
@@ -326,7 +326,7 @@ func WebsocketServer(c *gin.Context) {
 	}
 }
 func logUnknown(content string) {
-	log.Println(+"Websocket Read unknown: " + string(content))
+	log.Println("Websocket Read unknown: " + string(content))
 }
 
 func wsSend(ws *websocket.Conn, data interface{}) {

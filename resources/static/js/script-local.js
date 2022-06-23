@@ -40,7 +40,8 @@ btnSystem.onclick = async () => {
             'uuid': serveruuid
         }))
         console.log(`uuid ${serveruuid} send.`)
-        await negotiation(serveruuid)
+        setTimeout(negotiation(serveruuid), 300);
+        // await negotiation(serveruuid)
     })
 
 }

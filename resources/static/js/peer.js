@@ -158,6 +158,7 @@ const handleEvent = async (data) => {
 // 完成 sdp 交换过程，必须在 addtrack 后调用
 async function negotiation(uuid) {
     // let peerConnection = peerConnections[uuid]
+    await streamAddTrack(uuid)
     try {
         let offer = await peerConnections[uuid].createOffer()
         await peerConnections[uuid].setLocalDescription(offer)
