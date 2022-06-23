@@ -104,7 +104,7 @@ const handleMessage = async event => {
     // }
     console.log(message)
     console.log(`recieve ${message.action}.`)
-    
+
 
     if (message.action === 'event') {
         // 事件处理
@@ -128,8 +128,12 @@ const handleMessage = async event => {
     }
 
     if (message.action === 'uuid') {
+        if (id2content == null) {
+            return
+        }
         // 设计问题
         const uuid = data
+        console.log(`recieve uuid ${uuid}`)
         // 有监考端需要查看
         await createPeerConnection(uuid)
         // peerConnections[uuid] = peerConnections[serveruuid]
@@ -158,6 +162,9 @@ const handleEvent = async (data) => {
     if (data.event === 'SendStreamId') {
         // 获取stream id
         id2content = data.streamid
+        if (id2content.screen == '' && id2content.camera == '') {
+            alert("对端并未开启视频流")
+        }
     }
 }
 
@@ -185,6 +192,8 @@ async function createPeerConnection(uuid) {
     peerConnections[uuid] = new RTCPeerConnection(servers)
 
     peerConnections[uuid].ontrack = event => {
+
+
         console.log("track event", event)
         if (id2content.camera === event.streams[0].id) {
             console.log('camera stream track')
@@ -218,6 +227,29 @@ async function createPeerConnection(uuid) {
                 'uuid': uuid
             }))
             console.log('candidate send.')
+        }
+    }
+
+    peerConnections[uuid].onconnectionstatechange = ev => {
+        switch (peerConnections[uuid].connectionState) {
+            case "new":
+            case "checking":
+                break;
+            case "connected":
+                break;
+            case "disconnected":
+                // 断开连接，释放资源
+                peerConnections[uuid].close()
+                delete peerConnections[uuid]
+                break;
+            case "closed":
+                console.log(`${peerConnections[uuid]} closed.`)
+                delete peerConnections[uuid]
+                break;
+            case "failed":
+                break;
+            default:
+                break;
         }
     }
 }
@@ -367,7 +399,6 @@ const createAnswer = async (uuid, offer) => {
     })
     ws.send(json)
     console.log('answer send.')
-    console.log(answer)
 }
 
 const addAnswer = async (uuid, answer) => {
@@ -392,7 +423,7 @@ let leaveChannel = async () => {
     for (const uuid in peerConnections) {
         peerConnections[uuid].close()
     }
-    
+
     console.log("RTCPeerConnection closed!")
 }
 
