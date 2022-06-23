@@ -235,6 +235,7 @@ func WebsocketServer(c *gin.Context) {
 					upload := map[string]interface{}{
 						"action": "answer",
 						"data":   answer,
+						"uuid":   userdata.uuid,
 					}
 					ws.WriteJSON(upload)
 					log.Println("Websocket write: answer")
