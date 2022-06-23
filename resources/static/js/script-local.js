@@ -40,6 +40,7 @@ btnSystem.onclick = async () => {
             'uuid': serveruuid
         }))
         console.log(`uuid ${serveruuid} send.`)
+        await streamAddTrack(serveruuid)
         await negotiation(serveruuid)
     })
 

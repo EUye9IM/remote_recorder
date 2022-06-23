@@ -154,8 +154,11 @@ func WebsocketServer(c *gin.Context) {
 					if i.uinfo.No == stu_no {
 						s_id = i.stu_stream_id.screen
 						c_id = i.stu_stream_id.camera
+						// sconn应该在块内
+						sconn = i
+						break
 					}
-					sconn = i
+
 				}
 				uuid := GetTmpID()
 				updata := map[string]interface{}{
@@ -169,8 +172,9 @@ func WebsocketServer(c *gin.Context) {
 				uuid_map[uuid] = ConnDataPair{s: sconn, t: userdata}
 				log.Println("uuid_map add", uuid)
 
+				// 此处需要发送给 student
 				sendUuid(uuid_map[uuid].s.wsconn, uuid)
-				sendUuid(uuid_map[uuid].t.wsconn, uuid)
+				// sendUuid(uuid_map[uuid].t.wsconn, uuid)
 
 				continue
 			}
@@ -240,8 +244,9 @@ func WebsocketServer(c *gin.Context) {
 					ws.WriteJSON(upload)
 					log.Println("Websocket write: answer")
 				} else {
+					// 此处需要发给对端，也就是 teacher 端
 					if uuid_map[js.Uuid].s != nil {
-						uuid_map[js.Uuid].s.wsconn.WriteJSON(js)
+						uuid_map[js.Uuid].t.wsconn.WriteJSON(js)
 					}
 				}
 				continue
@@ -307,11 +312,14 @@ func WebsocketServer(c *gin.Context) {
 				if uuid_map[js.Uuid].t == nil {
 					peerConnection.AddICECandidate(candidate)
 				} else {
+					log.Println("转发answer")
 					if uuid_map[js.Uuid].s != nil && uuid_map[js.Uuid].t == userdata {
+						log.Println("转发给学生端")
 						uuid_map[js.Uuid].s.wsconn.WriteJSON(js)
 						continue
 					}
 					if uuid_map[js.Uuid].t != nil && uuid_map[js.Uuid].s == userdata {
+						log.Println("转发给教师端")
 						uuid_map[js.Uuid].t.wsconn.WriteJSON(js)
 						continue
 					}

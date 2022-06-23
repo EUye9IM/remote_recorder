@@ -96,7 +96,7 @@ async function waitForSocketConnection(socket, callback) {
         }, 5); // wait 5 milisecond for the connection...
 }
 
-const handleMessage = event => {
+const handleMessage = async event => {
     const message = JSON.parse(event.data)
     // console.log('message from ' + message.from)
     // if (message.from === userType) {
@@ -127,8 +127,13 @@ const handleMessage = event => {
     }
 
     if (message.action === 'uuid') {
+        // 设计问题
+        const uuid = data
         // 有监考端需要查看
-        createPeerConnection(uuid)
+        await createPeerConnection(uuid)
+        // peerConnections[uuid] = peerConnections[serveruuid]
+        await streamAddTrack(uuid)
+        await negotiation(uuid)
     }
 }
 
@@ -158,7 +163,6 @@ const handleEvent = async (data) => {
 // 完成 sdp 交换过程，必须在 addtrack 后调用
 async function negotiation(uuid) {
     // let peerConnection = peerConnections[uuid]
-    await streamAddTrack(uuid)
     try {
         let offer = await peerConnections[uuid].createOffer()
         await peerConnections[uuid].setLocalDescription(offer)
