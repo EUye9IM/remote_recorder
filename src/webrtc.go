@@ -60,6 +60,8 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 		if i == nil {
 			return
 		}
+		log.Println("icecandidate转换前：")
+		log.Println(i)
 		upload := map[string]interface{}{
 			"action": "candidate",
 			"data":   i.ToJSON(),

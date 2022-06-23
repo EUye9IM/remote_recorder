@@ -144,7 +144,8 @@ const handleMessage = async event => {
 
 const AddIceCandidate = (uuid, candidate) => {
     if (peerConnections[uuid]) {
-        // console.log(candidate)
+        console.log("解析前的candidate: ")
+        console.log(candidate)
         peerConnections[uuid].addIceCandidate(new RTCIceCandidate(candidate)).then(() => {
             console.log("new ice candidate")
             console.log(new RTCIceCandidate(candidate))
@@ -198,8 +199,6 @@ async function createPeerConnection(uuid) {
     peerConnections[uuid] = new RTCPeerConnection(servers)
 
     peerConnections[uuid].ontrack = event => {
-
-
         console.log("track event", event)
         if (id2content.camera === event.streams[0].id) {
             console.log('camera stream track')
@@ -229,10 +228,14 @@ async function createPeerConnection(uuid) {
             // 发送 candidate 信息
             const json = JSON.stringify({
                 'action': 'candidate',
-                'data': event.candidate,
+                'data': event.candidate.toJSON(),
                 'uuid': uuid
             })
             ws.send(json)
+            console.log("原生的candidate:")
+            console.log(event.candidate)
+            console.log("tojson之后的结果：");
+            console.log(event.candidate.toJSON())
             console.log('candidate send.')
             console.log(json)
         }
