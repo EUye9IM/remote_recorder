@@ -144,7 +144,13 @@ const handleMessage = async event => {
 
 const AddIceCandidate = (uuid, candidate) => {
     if (peerConnections[uuid]) {
-        peerConnections[uuid].addIceCandidate(candidate)
+        console.log(candidate)
+        peerConnections[uuid].addIceCandidate(new RTCIceCandidate(candidate)).then(() => {
+            console.log("new ice candidate")
+            console.log(new RTCIceCandidate(candidate))
+        }).then(event => {
+            console.log(event)
+        })
     }
 }
 
@@ -221,12 +227,14 @@ async function createPeerConnection(uuid) {
     peerConnections[uuid].onicecandidate = async event => {
         if (event.candidate) {
             // 发送 candidate 信息
-            ws.send(JSON.stringify({
+            const json = JSON.stringify({
                 'action': 'candidate',
                 'data': event.candidate,
                 'uuid': uuid
-            }))
+            })
+            ws.send(json)
             console.log('candidate send.')
+            console.log(json)
         }
     }
 
