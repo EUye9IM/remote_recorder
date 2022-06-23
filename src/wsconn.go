@@ -11,7 +11,6 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
-// TODO 监控端发送offer
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
@@ -96,7 +95,7 @@ func WebsocketServer(c *gin.Context) {
 			log.Println("Websocket receive not json: " + string(content))
 			continue
 		}
-		log.Println("Websocket receive: ", content)
+		log.Println("Websocket receive: ", string(content))
 		if js["action"] == "token" {
 			var js struct {
 				Action string `json:"action"`
@@ -203,7 +202,7 @@ func WebsocketServer(c *gin.Context) {
 			// uuid=serveruuid
 			uuid_map[js.Uuid] = ConnDataPair{s: userdata, t: nil}
 			userdata.uuid = js.Uuid
-			defer log.Println("uuid_map add", userdata.uuid)
+			log.Println("uuid_map add", userdata.uuid)
 
 			continue
 		}
