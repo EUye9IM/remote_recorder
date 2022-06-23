@@ -241,12 +241,12 @@ func WebsocketServer(c *gin.Context) {
 						"data":   answer,
 						"uuid":   userdata.uuid,
 					}
-					ws.WriteJSON(upload)
+					wsSend(ws, upload)
 					log.Println("Websocket write: answer")
 				} else {
 					// 此处需要发给对端，也就是 teacher 端
-					if uuid_map[js.Uuid].s != nil {
-						uuid_map[js.Uuid].t.wsconn.WriteJSON(js)
+					if uuid_map[js.Uuid].t != nil {
+						wsSend(uuid_map[js.Uuid].t.wsconn, js)
 					}
 				}
 				continue
@@ -277,11 +277,11 @@ func WebsocketServer(c *gin.Context) {
 					peerConnection.AddICECandidate(candidate)
 				} else {
 					if uuid_map[js.Uuid].s != nil && uuid_map[js.Uuid].t == userdata {
-						uuid_map[js.Uuid].s.wsconn.WriteJSON(js)
+						wsSend(uuid_map[js.Uuid].s.wsconn, js)
 						continue
 					}
 					if uuid_map[js.Uuid].t != nil && uuid_map[js.Uuid].s == userdata {
-						uuid_map[js.Uuid].t.wsconn.WriteJSON(js)
+						wsSend(uuid_map[js.Uuid].t.wsconn, js)
 						continue
 					}
 				}
@@ -317,12 +317,12 @@ func WebsocketServer(c *gin.Context) {
 					log.Println("转发answer")
 					if uuid_map[js.Uuid].s != nil && uuid_map[js.Uuid].t == userdata {
 						log.Println("转发给学生端")
-						uuid_map[js.Uuid].s.wsconn.WriteJSON(js)
+						wsSend(uuid_map[js.Uuid].s.wsconn, js)
 						continue
 					}
 					if uuid_map[js.Uuid].t != nil && uuid_map[js.Uuid].s == userdata {
 						log.Println("转发给教师端")
-						uuid_map[js.Uuid].t.wsconn.WriteJSON(js)
+						wsSend(uuid_map[js.Uuid].t.wsconn, js)
 						continue
 					}
 				}
