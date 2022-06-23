@@ -1,7 +1,7 @@
 # 调试模式
 debug = true
 
-save_path = "./save"
+save_path = "./"
 # 数据库
 [database]
 #路径

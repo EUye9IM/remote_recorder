@@ -315,12 +315,12 @@ func WebsocketServer(c *gin.Context) {
 					log.Println("转发answer")
 					if uuid_map[js.Uuid].s != nil && uuid_map[js.Uuid].t == userdata {
 						log.Println("转发给学生端")
-						wsSend(uuid_map[js.Uuid].s.wsconn, js)
+						wsSend(uuid_map[js.Uuid].s.wsconn, string(content))
 						continue
 					}
 					if uuid_map[js.Uuid].t != nil && uuid_map[js.Uuid].s == userdata {
 						log.Println("转发给教师端")
-						wsSend(uuid_map[js.Uuid].t.wsconn, js)
+						wsSend(uuid_map[js.Uuid].t.wsconn, string(content))
 						continue
 					}
 				}

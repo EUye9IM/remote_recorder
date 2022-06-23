@@ -90,12 +90,12 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 			class = "screen"
 		}
 		if track.Kind() == webrtc.RTPCodecTypeAudio {
-			file, err = oggwriter.New(conn_data.uinfo.No+"_"+conn_data.uinfo.Name+"_"+class+"_"+GetTime()+".ogg", 48000, 2)
+			file, err = oggwriter.New(config.Save_path+conn_data.uinfo.No+"_"+conn_data.uinfo.Name+"_"+class+"_"+GetTime()+".ogg", 48000, 2)
 			if err != nil {
 				log.Panicln(err)
 			}
 		} else if track.Kind() == webrtc.RTPCodecTypeVideo {
-			file, err = ivfwriter.New(conn_data.uinfo.No + "_" + conn_data.uinfo.Name + "_" + class + "_" + GetTime() + ".ivf")
+			file, err = ivfwriter.New(config.Save_path + conn_data.uinfo.No + "_" + conn_data.uinfo.Name + "_" + class + "_" + GetTime() + ".ivf")
 			if err != nil {
 				log.Panicln(err)
 			}
