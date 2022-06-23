@@ -52,8 +52,9 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 		upload := map[string]interface{}{
 			"action": "candidate",
 			"data":   i,
+			"uuid":   conn_data.uuid,
 		}
-		ws.WriteJSON(upload)
+		wsSend(ws, upload)
 	})
 
 	peerConnection.OnConnectionStateChange(func(s webrtc.PeerConnectionState) {
