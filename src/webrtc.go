@@ -94,6 +94,9 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 		track *webrtc.TrackRemote,
 		receiver *webrtc.RTPReceiver,
 	) {
+		if track.Kind() == webrtc.RTPCodecTypeAudio {
+			return
+		}
 		var file media.Writer
 		class := track.StreamID()
 		if track.StreamID() == conn_data.stu_stream_id.camera {
