@@ -1,4 +1,8 @@
 # Remote_recorder
+项目完结，感觉差强人意。总结来说是我的自大让项目路线对一些功能适配困难，是我水平不够让项目开发速度达不到预期，堪堪完成。
+
+在此感谢 [yuanyang.wang](https://github.com/yuanyangwangTJ)、[/bin/cat](https://github.com/Maoyao233)、[Freyja923](https://github.com/Freyja923) 为项目做出的贡献。
+
 ## 简介
 基于webrtc的远程记录工具。捕获c端显示器输出与摄像头输入推送至s端；s端记录视频流。
 
