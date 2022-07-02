@@ -1,1 +1,1 @@
-go build -o server -mod=vendor ./src
+go build -o webrtc-server -mod=vendor ./src

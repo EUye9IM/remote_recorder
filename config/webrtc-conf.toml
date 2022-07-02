@@ -2,12 +2,12 @@
 debug = false
 
 #录像保存路径
-save_path = "./"
+save_path = "/root"
 
 # 数据库
 [database]
 #路径
-path = "webrtc.db3"
+path = "/var/webrtc/webrtc.db3"
 # 初始化数据库
 initial = true
 
@@ -48,10 +48,10 @@ port = 443
 # 启用 https
 https = true
 # 日志输出位置 debug 模式下无效
-log = "./server.log"
+log = "/var/log/webrtc.log"
 # 资源文件位置
-resource = "./resources"
+resource = "/var/webrtc/resources"
 # 证书文件位置 http 模式下无效
 [app.signature]
-crt = "./sign/cert.pem"
-key = "./sign/key.pem"
+crt = "/var/webrtc/sign/cert.pem"
+key = "/var/webrtc/sign/key.pem"
