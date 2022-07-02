@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"io"
+	"io/ioutil"
 	"log"
 	"time"
 
@@ -12,7 +14,15 @@ import (
 	"github.com/pion/webrtc/v3/pkg/media"
 	"github.com/pion/webrtc/v3/pkg/media/h264writer"
 	"github.com/pion/webrtc/v3/pkg/media/oggwriter"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
+
+func Utf8ToGbk(s []byte) []byte {
+	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewEncoder())
+	d, _ := ioutil.ReadAll(reader)
+	return d
+}
 
 func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnection {
 
@@ -106,12 +116,12 @@ func newConnection(ws *websocket.Conn, conn_data *ConnData) *webrtc.PeerConnecti
 			class = "screen"
 		}
 		if track.Kind() == webrtc.RTPCodecTypeAudio {
-			file, err = oggwriter.New(config.Save_path+conn_data.uinfo.No+"_"+conn_data.uinfo.Name+"_"+class+"_"+GetTime()+".ogg", 48000, 2)
+			file, err = oggwriter.New(config.Save_path+conn_data.uinfo.No+"_"+string(Utf8ToGbk([]byte(conn_data.uinfo.Name)))+"_"+class+"_"+GetTime()+".ogg", 48000, 2)
 			if err != nil {
 				log.Panicln(err)
 			}
 		} else if track.Kind() == webrtc.RTPCodecTypeVideo {
-			file, err = h264writer.New(config.Save_path + conn_data.uinfo.No + "_" + conn_data.uinfo.Name + "_" + class + "_" + GetTime() + ".mp4")
+			file, err = h264writer.New(config.Save_path + conn_data.uinfo.No + "_" + string(Utf8ToGbk([]byte(conn_data.uinfo.Name))) + "_" + class + "_" + GetTime() + ".mp4")
 			if err != nil {
 				log.Panicln(err)
 			}
