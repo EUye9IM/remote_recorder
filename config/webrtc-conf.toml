@@ -1,18 +1,21 @@
 # 调试模式
-debug = true
+debug = false
 
+#录像保存路径
 save_path = "./"
+
 # 数据库
 [database]
 #路径
 path = "webrtc.db3"
 # 初始化数据库
 initial = true
+
 # 账号
 [[database.account]]
 no="1234567"
 name = "张三"
-password = "1"
+password = "1234567"
 level = "0"
 enable = "1"
 
@@ -23,26 +26,10 @@ password = "9999999"
 level = "1"
 enable = "1"
 
-# 账号测试
-[[database.account]]
-no="0"
-name = "张张"
-password = "00"
-level = "0"
-enable = "1"
-
-# 监考测试
-[[database.account]]
-no="1"
-name = "监控"
-password = "00"
-level = "1"
-enable = "1"
-
 # 密码
 [password]
 # 复杂密码检查
-strict_mode = false
+strict_mode = true
 #最小长度
 length = 8
 #最少大写字母
@@ -54,24 +41,17 @@ digital = 1
 #最少特殊字符
 other = 1
 
-[[database.account]]
-no="9"
-name = "监控"
-password = "1"
-level = "1"
-enable = "1"
-
 # 应用
 [app]
 # 端口 http:80 https:443
 port = 443
-# 启用 https true/false
+# 启用 https
 https = true
 # 日志输出位置 debug 模式下无效
-log = "server.log"
+log = "./server.log"
 # 资源文件位置
-resource = "resources"
+resource = "./resources"
 # 证书文件位置 http 模式下无效
 [app.signature]
-crt = "sign/cert.pem"
-key = "sign/key.pem"
+crt = "./sign/cert.pem"
+key = "./sign/key.pem"
